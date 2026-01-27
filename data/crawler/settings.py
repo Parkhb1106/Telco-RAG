@@ -1,7 +1,7 @@
-BOT_NAME = "telco_crawler"
+BOT_NAME = "crawler"
 
-SPIDER_MODULES = ["telco_crawler.spiders"]
-NEWSPIDER_MODULE = "telco_crawler.spiders"
+SPIDER_MODULES = ["crawler.spider"]
+NEWSPIDER_MODULE = "crawler.spider"
 
 ROBOTSTXT_OBEY = True
 DOWNLOAD_DELAY = 1.0
@@ -10,7 +10,7 @@ CONCURRENT_REQUESTS = 8
 OUT_DIR = "crawl_out"
 
 ITEM_PIPELINES = {
-    "telco_crawler.pipelines.JsonlDedupPipeline": 300,
+    "crawler.pipelines.JsonlDedupPipeline": 300,
 }
 
 # ---- Playwright integration (used by JS spider) ----

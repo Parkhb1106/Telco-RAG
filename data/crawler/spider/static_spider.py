@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 import scrapy
 
-from telco_crawler.items import PageItem
-from telco_crawler.utils import (
+from crawler.items import PageItem
+from crawler.utils import (
     now_utc_iso,
     normalize_url,
     extract_title_and_text,
@@ -19,9 +19,9 @@ class StaticSpider(scrapy.Spider):
 
     def __init__(
         self,
-        url_file="urls.txt",
+        url_file="urls.jsonl",
         min_chars=200,
-        needs_js_file="needs_js.txt",
+        needs_js_file="needs_js.jsonl",
         follow_links=1,
         allowed_domains="",
         allowed_paths="",
@@ -71,20 +71,43 @@ class StaticSpider(scrapy.Spider):
         seeds = []
         seen = set()
         domains = set()
+        path_prefixes = set()
 
         for line in raw.splitlines():
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            u = normalize_url(line)
-            if not u or u in seen:
-                continue
-            seen.add(u)
-            seeds.append(u)
-            try:
-                domains.add(scrapy.utils.url.parse_url(u).host)
-            except Exception:
-                pass
+
+            if p.suffix == ".jsonl":
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(row, dict):
+                    continue
+                u = normalize_url(row.get("url", ""))
+                if not u or u in seen:
+                    continue
+                seen.add(u)
+                seeds.append(u)
+                if self.allowed_domains_list is None:
+                    for d in row.get("allowed_domains", []) or []:
+                        if d:
+                            domains.add(d.strip())
+                if self.allowed_path_prefixes is None:
+                    for pfx in row.get("allowed_paths", []) or []:
+                        if pfx:
+                            path_prefixes.add(pfx.strip())
+            else:
+                u = normalize_url(line)
+                if not u or u in seen:
+                    continue
+                seen.add(u)
+                seeds.append(u)
+                try:
+                    domains.add(scrapy.utils.url.parse_url(u).host)
+                except Exception:
+                    pass
 
         # allowed_domains가 명시되지 않았으면 seed 도메인들로 자동 구성
         if self.allowed_domains_list is None and domains:
@@ -96,6 +119,8 @@ class StaticSpider(scrapy.Spider):
             # OffsiteMiddleware도 함께 적용되도록 spider.allowed_domains 설정
             if self.allowed_domains_list is not None:
                 self.allowed_domains = self.allowed_domains_list
+        if self.allowed_path_prefixes is None and path_prefixes:
+            self.allowed_path_prefixes = sorted({pfx for pfx in path_prefixes if pfx})
 
         return seeds
 
@@ -160,8 +185,13 @@ class StaticSpider(scrapy.Spider):
         if need_js:
             if response.url not in self._needs_seen:
                 self._needs_seen.add(response.url)
-                self._needs_fp.write(response.url + "\n")
-            return
+        payload = {"url": response.url}
+        if self.allowed_domains_list:
+            payload["allowed_domains"] = self.allowed_domains_list
+        if self.allowed_path_prefixes:
+            payload["allowed_paths"] = self.allowed_path_prefixes
+        self._needs_fp.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        return
 
         item = PageItem(
             url=response.url,
