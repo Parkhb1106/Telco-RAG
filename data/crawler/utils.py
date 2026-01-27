@@ -108,6 +108,8 @@ def strip_tracking_query_params(url: str, keep_query_keys: set[str] | None = Non
 def host_matches_domain(host: str, domain: str) -> bool:
     """Match subdomains too: host == domain or host.endswith('.'+domain)."""
     host = (host or "").lower()
+    if ":" in host:
+        host = host.split(":", 1)[0]
     domain = (domain or "").lower().lstrip(".")
     if not host or not domain:
         return False
@@ -162,7 +164,7 @@ def should_follow_url(
         return False
 
     if allowed_domains:
-        host = (urlparse(url).netloc or "").lower()
+        host = (urlparse(url).hostname or "").lower()
         if not any(host_matches_domain(host, d) for d in allowed_domains):
             return False
 

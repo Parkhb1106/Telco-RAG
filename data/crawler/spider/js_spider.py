@@ -7,10 +7,13 @@ from crawler.items import PageItem
 from crawler.utils import (
     now_utc_iso,
     normalize_url,
+    strip_tracking_query_params,
     extract_title_and_text,
     compute_text_sha1,
     absolutize_and_clean_url,
     should_follow_url,
+    host_matches_domain,
+    in_allowed_paths,
 )
 
 
@@ -32,6 +35,7 @@ class JsSpider(scrapy.Spider):
         follow_links=1,
         allowed_domains="",
         allowed_paths="",
+        allowed_link_selectors="",
         allowed_meta_name="",
         allowed_meta_content="",
         drop_all_query=0,
@@ -46,6 +50,7 @@ class JsSpider(scrapy.Spider):
 
         self.allowed_domains_list = [d.strip() for d in allowed_domains.split(",") if d.strip()] or None
         self.allowed_path_prefixes = [p.strip() for p in allowed_paths.split(",") if p.strip()] or None
+        self.allowed_link_selectors = [s.strip() for s in allowed_link_selectors.split(",") if s.strip()] or None
         allowed_meta_name = allowed_meta_name.strip()
         allowed_meta_content = allowed_meta_content.strip()
         self.allowed_meta_filters = None
@@ -62,20 +67,19 @@ class JsSpider(scrapy.Spider):
 
         self._err_fp = None
 
-    def close_spider(self):
+    def close_spider(self, spider):
         if self._err_fp:
             self._err_fp.close()
 
-    def _load_urls_and_maybe_set_allowed_domains(self) -> list[str]:
+    def _load_urls_and_maybe_set_allowed_domains(self) -> list[dict]:
         p = Path(self.url_file)
         if not p.is_absolute():
             p = Path.cwd() / p
 
         raw = p.read_text(encoding="utf-8", errors="ignore")
-        urls = []
+        seeds = []
         seen = set()
         domains = set()
-        path_prefixes = set()
         meta_filters = set()
 
         def _normalize_list_field(value):
@@ -88,10 +92,11 @@ class JsSpider(scrapy.Spider):
         def add_url(row_or_url):
             if isinstance(row_or_url, str):
                 u = normalize_url(row_or_url)
+                u = strip_tracking_query_params(u, keep_query_keys=self.keep_query_keys, drop_all_query=self.drop_all_query)
                 if not u or u in seen:
                     return
                 seen.add(u)
-                urls.append(u)
+                seeds.append({"url": u})
                 try:
                     domains.add(scrapy.utils.url.parse_url(u).host)
                 except Exception:
@@ -101,19 +106,30 @@ class JsSpider(scrapy.Spider):
             if not isinstance(row_or_url, dict):
                 return
             u = normalize_url(row_or_url.get("url", ""))
+            u = strip_tracking_query_params(u, keep_query_keys=self.keep_query_keys, drop_all_query=self.drop_all_query)
             if not u or u in seen:
                 return
             seen.add(u)
-            urls.append(u)
+            seed_info = {"url": u}
+            if "allowed_domains" in row_or_url:
+                seed_info["allowed_domains"] = _normalize_list_field(row_or_url["allowed_domains"])
+            if "allowed_paths" in row_or_url:
+                seed_info["allowed_paths"] = _normalize_list_field(row_or_url["allowed_paths"])
+            if "allowed_link_selectors" in row_or_url:
+                seed_info["allowed_link_selectors"] = _normalize_list_field(row_or_url["allowed_link_selectors"])
+            if "allowed_meta_name" in row_or_url and "allowed_meta_content" in row_or_url:
+                seed_info["allowed_meta_name"] = row_or_url["allowed_meta_name"]
+                seed_info["allowed_meta_content"] = row_or_url["allowed_meta_content"]
+            seeds.append(seed_info)
 
             if self.allowed_domains_list is None:
+                try:
+                    domains.add(scrapy.utils.url.parse_url(u).host)
+                except Exception:
+                    pass
                 for d in _normalize_list_field(row_or_url.get("allowed_domains", [])):
                     if d:
                         domains.add(d.strip())
-            if self.allowed_path_prefixes is None:
-                for pfx in _normalize_list_field(row_or_url.get("allowed_paths", [])):
-                    if pfx:
-                        path_prefixes.add(pfx.strip())
             if self.allowed_meta_filters is None:
                 meta_name = (row_or_url.get("allowed_meta_name") or "").strip()
                 meta_content = (row_or_url.get("allowed_meta_content") or "").strip()
@@ -160,21 +176,42 @@ class JsSpider(scrapy.Spider):
         else:
             if self.allowed_domains_list is not None:
                 self.allowed_domains = self.allowed_domains_list
-        if self.allowed_path_prefixes is None and path_prefixes:
-            self.allowed_path_prefixes = sorted({pfx for pfx in path_prefixes if pfx})
+        # Do not promote per-seed allowed_paths to a global default.
+        # This avoids unintentionally constraining seeds that did not specify paths.
+        # Do not promote per-seed allowed_link_selectors to a global default.
+        # This avoids unintentionally constraining seeds that did not specify selectors.
         if self.allowed_meta_filters is None and meta_filters:
             self.allowed_meta_filters = sorted(meta_filters)
 
-        return urls
+        return seeds
 
-    async def start(self):
-        urls = self._load_urls_and_maybe_set_allowed_domains()
-        if not urls:
+    def start_requests(self):
+        seeds = self._load_urls_and_maybe_set_allowed_domains()
+        if not seeds:
             raise SystemExit(f"No URLs found in: {self.url_file}")
 
-        for u in urls:
+        for seed in seeds:
+            if "allowed_domains" in seed:
+                host = (scrapy.utils.url.parse_url(seed["url"]).host or "").lower()
+                if host and not any(host_matches_domain(host, d) for d in seed["allowed_domains"]):
+                    self._err_fp.write(json.dumps({
+                        "url": seed["url"],
+                        "stage": "js",
+                        "error": "seed_url_not_in_allowed_domains",
+                        "time_utc": now_utc_iso(),
+                    }, ensure_ascii=False) + "\n")
+                    continue
+            if "allowed_paths" in seed:
+                if not in_allowed_paths(seed["url"], seed["allowed_paths"]):
+                    self._err_fp.write(json.dumps({
+                        "url": seed["url"],
+                        "stage": "js",
+                        "error": "seed_url_not_in_allowed_paths",
+                        "time_utc": now_utc_iso(),
+                    }, ensure_ascii=False) + "\n")
+                    continue
             yield scrapy.Request(
-                u,
+                seed["url"],
                 callback=self.parse,
                 errback=self.errback_js,
                 meta={
@@ -183,8 +220,13 @@ class JsSpider(scrapy.Spider):
                         PageMethod("wait_for_load_state", "networkidle"),
                     ],
                     "is_seed": True,
+                    "seed_info": seed,
                 },
             )
+    
+    async def start(self):
+        for req in self.start_requests():
+            yield req
 
     def errback_js(self, failure):
         req = failure.request
@@ -201,8 +243,33 @@ class JsSpider(scrapy.Spider):
         if not self._page_allows_follow(response):
             return
 
-        hrefs = response.css("a::attr(href)").getall()
+        seed_info = response.meta.get("seed_info", {}) or {}
+        allowed_domains = seed_info["allowed_domains"] if "allowed_domains" in seed_info else self.allowed_domains_list
+        allowed_paths = seed_info["allowed_paths"] if "allowed_paths" in seed_info else self.allowed_path_prefixes
+        if "allowed_link_selectors" in seed_info:
+            selectors = seed_info["allowed_link_selectors"]
+        elif self.allowed_link_selectors is not None:
+            selectors = self.allowed_link_selectors
+        else:
+            selectors = None
+
+        if selectors is not None:
+            hrefs = []
+            for sel in selectors:
+                sel = (sel or "").strip()
+                if not sel:
+                    continue
+                if "::attr(" in sel:
+                    hrefs.extend(response.css(sel).getall())
+                else:
+                    hrefs.extend(response.css(f"{sel}::attr(href)").getall())
+        else:
+            hrefs = response.css("a::attr(href)").getall()
+        seen_hrefs = set()
         for href in hrefs:
+            if href in seen_hrefs:
+                continue
+            seen_hrefs.add(href)
             nxt = absolutize_and_clean_url(
                 base_url=response.url,
                 href=href,
@@ -214,8 +281,8 @@ class JsSpider(scrapy.Spider):
 
             if not should_follow_url(
                 nxt,
-                allowed_domains=self.allowed_domains_list,
-                allowed_path_prefixes=self.allowed_path_prefixes,
+                allowed_domains=allowed_domains,
+                allowed_path_prefixes=allowed_paths,
             ):
                 continue
 
@@ -229,6 +296,7 @@ class JsSpider(scrapy.Spider):
                         PageMethod("wait_for_load_state", "networkidle"),
                     ],
                     "is_seed": False,
+                    "seed_info": seed_info,
                 },
             )
 
@@ -242,7 +310,7 @@ class JsSpider(scrapy.Spider):
 
         if seed_meta_name and seed_meta_content:
             filters = [(seed_meta_name, seed_meta_content)]
-        elif self._meta_filters_from_args and self.allowed_meta_filters:
+        elif self.allowed_meta_filters:
             filters = self.allowed_meta_filters
         else:
             return True

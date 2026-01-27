@@ -5,7 +5,7 @@
 {"url":"https://www.sharetechnote.com/html/Handbook_UMTS_Index.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/"],"allowed_meta_name":"description","allowed_meta_content":"This site is for everything on 3G/2G"}
 {"url":"https://www.sharetechnote.com/html/Handbook_LTE_BL_CE.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/"],"allowed_meta_name":"description","allowed_meta_content":"This site is for everything on 4G/LTE"}
 {"url":"https://www.sharetechnote.com/html/Handbook_LTE_NB_LTE.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/"],"allowed_meta_name":"description","allowed_meta_content":"This site is for everything on 4G/LTE"}
-{"url":"https://www.eventhelix.com/5g/","allowed_domains":["eventhelix.com"],"allowed_paths":["/5g/"]}
-{"url":"https://www.techplayon.com/ntn/","allowed_domains":["techplayon.com"],"allowed_paths":["/ntn/"]}
-{"url":"https://www.techplayon.com/lte-a-lte/","allowed_domains":["techplayon.com"],"allowed_paths":["/lte-a-lte/"]}
-{"url":"https://www.techplayon.com/5gnr/","allowed_domains":["techplayon.com"],"allowed_paths":["/5gnr/"]}
+{"url":"https://www.eventhelix.com/5g/","allowed_domains":["eventhelix.com"],"allowed_paths":["/5g/", "/5g-nr/"]}
+{"url":"https://www.techplayon.com/ntn/","allowed_domains":["techplayon.com"],"allowed_link_selectors":["li a"]}
+{"url":"https://www.techplayon.com/lte-a-lte/","allowed_domains":["techplayon.com"],"allowed_link_selectors":["li a"]}
+{"url":"https://www.techplayon.com/5gnr/","allowed_domains":["techplayon.com"],"allowed_link_selectors":["li a"]}
