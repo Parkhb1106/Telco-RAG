@@ -19,10 +19,12 @@ class JsSpider(scrapy.Spider):
 
     def __init__(
         self,
-        url_file="needs_js.txt",
+        url_file="needs_js.jsonl",
         follow_links=0,
         allowed_domains="",
         allowed_paths="",
+        allowed_meta_name="",
+        allowed_meta_content="",
         drop_all_query=0,
         keep_query_keys="",
         max_pages=0,
@@ -35,6 +37,11 @@ class JsSpider(scrapy.Spider):
 
         self.allowed_domains_list = [d.strip() for d in allowed_domains.split(",") if d.strip()] or None
         self.allowed_path_prefixes = [p.strip() for p in allowed_paths.split(",") if p.strip()] or None
+        allowed_meta_name = allowed_meta_name.strip()
+        allowed_meta_content = allowed_meta_content.strip()
+        self.allowed_meta_filters = None
+        if allowed_meta_name and allowed_meta_content:
+            self.allowed_meta_filters = [(allowed_meta_name, allowed_meta_content)]
 
         self.drop_all_query = int(drop_all_query) == 1
         self.keep_query_keys = {k.strip() for k in keep_query_keys.split(",") if k.strip()} or None
@@ -63,6 +70,7 @@ class JsSpider(scrapy.Spider):
         seen = set()
         domains = set()
         path_prefixes = set()
+        meta_filters = set()
 
         for line in raw.splitlines():
             line = line.strip()
@@ -89,6 +97,11 @@ class JsSpider(scrapy.Spider):
                     for pfx in row.get("allowed_paths", []) or []:
                         if pfx:
                             path_prefixes.add(pfx.strip())
+                if self.allowed_meta_filters is None:
+                    meta_name = (row.get("allowed_meta_name") or "").strip()
+                    meta_content = (row.get("allowed_meta_content") or "").strip()
+                    if meta_name and meta_content:
+                        meta_filters.add((meta_name, meta_content))
             else:
                 u = normalize_url(line)
                 if not u or u in seen:
@@ -109,6 +122,8 @@ class JsSpider(scrapy.Spider):
                 self.allowed_domains = self.allowed_domains_list
         if self.allowed_path_prefixes is None and path_prefixes:
             self.allowed_path_prefixes = sorted({pfx for pfx in path_prefixes if pfx})
+        if self.allowed_meta_filters is None and meta_filters:
+            self.allowed_meta_filters = sorted(meta_filters)
 
         return urls
 
@@ -142,6 +157,8 @@ class JsSpider(scrapy.Spider):
     def _extract_and_follow_links_js(self, response):
         if not self.follow_links:
             return
+        if not self._page_allows_follow(response):
+            return
 
         hrefs = response.css("a::attr(href)").getall()
         for href in hrefs:
@@ -172,6 +189,16 @@ class JsSpider(scrapy.Spider):
                     ],
                 },
             )
+
+    def _page_allows_follow(self, response) -> bool:
+        if not self.allowed_meta_filters:
+            return True
+        for meta_name, meta_content in self.allowed_meta_filters:
+            values = response.css(f'meta[name="{meta_name}"]::attr(content)').getall()
+            for value in values:
+                if (value or "").strip() == meta_content:
+                    return True
+        return False
 
     def parse(self, response):
         if self.max_pages > 0:

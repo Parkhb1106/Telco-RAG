@@ -25,6 +25,8 @@ class StaticSpider(scrapy.Spider):
         follow_links=1,
         allowed_domains="",
         allowed_paths="",
+        allowed_meta_name="",
+        allowed_meta_content="",
         drop_all_query=0,
         keep_query_keys="",
         max_pages=0,
@@ -42,6 +44,11 @@ class StaticSpider(scrapy.Spider):
 
         self.allowed_domains_list = [d.strip() for d in allowed_domains.split(",") if d.strip()] or None
         self.allowed_path_prefixes = [p.strip() for p in allowed_paths.split(",") if p.strip()] or None
+        allowed_meta_name = allowed_meta_name.strip()
+        allowed_meta_content = allowed_meta_content.strip()
+        self.allowed_meta_filters = None
+        if allowed_meta_name and allowed_meta_content:
+            self.allowed_meta_filters = [(allowed_meta_name, allowed_meta_content)]
 
         self.max_pages = int(max_pages)
         self._pages_seen = 0
@@ -72,6 +79,7 @@ class StaticSpider(scrapy.Spider):
         seen = set()
         domains = set()
         path_prefixes = set()
+        meta_filters = set()
 
         for line in raw.splitlines():
             line = line.strip()
@@ -98,6 +106,11 @@ class StaticSpider(scrapy.Spider):
                     for pfx in row.get("allowed_paths", []) or []:
                         if pfx:
                             path_prefixes.add(pfx.strip())
+                if self.allowed_meta_filters is None:
+                    meta_name = (row.get("allowed_meta_name") or "").strip()
+                    meta_content = (row.get("allowed_meta_content") or "").strip()
+                    if meta_name and meta_content:
+                        meta_filters.add((meta_name, meta_content))
             else:
                 u = normalize_url(line)
                 if not u or u in seen:
@@ -121,8 +134,20 @@ class StaticSpider(scrapy.Spider):
                 self.allowed_domains = self.allowed_domains_list
         if self.allowed_path_prefixes is None and path_prefixes:
             self.allowed_path_prefixes = sorted({pfx for pfx in path_prefixes if pfx})
+        if self.allowed_meta_filters is None and meta_filters:
+            self.allowed_meta_filters = sorted(meta_filters)
 
         return seeds
+
+    def _page_allows_follow(self, response) -> bool:
+        if not self.allowed_meta_filters:
+            return True
+        for meta_name, meta_content in self.allowed_meta_filters:
+            values = response.css(f'meta[name="{meta_name}"]::attr(content)').getall()
+            for value in values:
+                if (value or "").strip() == meta_content:
+                    return True
+        return False
 
     def start_requests(self):
         seeds = self._load_seeds_and_maybe_set_allowed_domains()
@@ -143,6 +168,8 @@ class StaticSpider(scrapy.Spider):
 
     def _extract_and_follow_links(self, response):
         if not self.follow_links:
+            return
+        if not self._page_allows_follow(response):
             return
 
         hrefs = response.css("a::attr(href)").getall()
@@ -190,6 +217,10 @@ class StaticSpider(scrapy.Spider):
             payload["allowed_domains"] = self.allowed_domains_list
         if self.allowed_path_prefixes:
             payload["allowed_paths"] = self.allowed_path_prefixes
+        if self.allowed_meta_filters:
+            meta_name, meta_content = self.allowed_meta_filters[0]
+            payload["allowed_meta_name"] = meta_name
+            payload["allowed_meta_content"] = meta_content
         self._needs_fp.write(json.dumps(payload, ensure_ascii=False) + "\n")
         return
 
