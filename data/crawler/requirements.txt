@@ -1,4 +1,0 @@
-scrapy
-scrapy-playwright
-beautifulsoup4
-playwright
