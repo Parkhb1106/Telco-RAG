@@ -1,11 +1,21 @@
-{"url":"https://www.sharetechnote.com/html/Handbook_LTE.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/"],"allowed_meta_name":"description","allowed_meta_content":"This site is for everything on 4G/LTE"}
-{"url":"https://www.sharetechnote.com/html/Handbook_LteAdv.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/"],"allowed_meta_name":"description","allowed_meta_content":"This site is for everything on 4G/LTE"}}
-{"url":"https://www.sharetechnote.com/html/5G/Handbook_5G_Index.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/"]}
-{"url":"https://www.sharetechnote.com/html/NTN/NTN_WhatIsIt.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/NTN/"]}
-{"url":"https://www.sharetechnote.com/html/Handbook_UMTS_Index.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/"],"allowed_meta_name":"description","allowed_meta_content":"This site is for everything on 3G/2G"}
-{"url":"https://www.sharetechnote.com/html/Handbook_LTE_BL_CE.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/"],"allowed_meta_name":"description","allowed_meta_content":"This site is for everything on 4G/LTE"}
-{"url":"https://www.sharetechnote.com/html/Handbook_LTE_NB_LTE.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/"],"allowed_meta_name":"description","allowed_meta_content":"This site is for everything on 4G/LTE"}
-{"url":"https://www.eventhelix.com/5g/","allowed_domains":["eventhelix.com"],"allowed_paths":["/5g/"]}
+{"url":"https://www.eventhelix.com/5g/","allowed_domains":["eventhelix.com"],"allowed_paths":["/5g/", "/5g-nr/"]}
 {"url":"https://www.techplayon.com/ntn/","allowed_domains":["techplayon.com"],"allowed_paths":["/ntn/"]}
 {"url":"https://www.techplayon.com/lte-a-lte/","allowed_domains":["techplayon.com"],"allowed_paths":["/lte-a-lte/"]}
 {"url":"https://www.techplayon.com/5gnr/","allowed_domains":["techplayon.com"],"allowed_paths":["/5gnr/"]}
+
+{"url":"https://www.sharetechnote.com/html/5G/5G_FrameStructure.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_FrameStructure.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_Phy_Numerology.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_Phy_Numerology.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_Phy_BeamManagement.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_Phy_BeamManagement.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_ChannelMapping.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_ChannelMapping.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_DCI.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_DCI.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_Phy_ReferenceSignal.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_Phy_ReferenceSignal.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_RRC_Overview.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_RRC_Overview.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_Mib_Sib.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_Mib_Sib.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_RACH.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_RACH.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_RRC_Reconfiguration.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_RRC_Reconfiguration.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_LTE_Interworking.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_LTE_Interworking.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_CallProcess_InitialAttach.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_CallProcess_InitialAttach.html"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_UE_Capability.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_UE_Capability.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_MeasurementReport.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_MeasurementReport.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_Registration.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_Registration.html/"]}
+{"url":"https://www.sharetechnote.com/html/5G/5G_NetworkSlicing.html","allowed_domains":["sharetechnote.com"],"allowed_paths":["/html/5G/5G_NetworkSlicing.html/"]}

@@ -15,18 +15,18 @@ class JsonlDedupPipeline:
         out_dir = crawler.settings.get("OUT_DIR", "crawl_out")
         return cls(out_dir)
 
-    def open_spider(self, spider):
+    def open_spider(self):
         self.out_dir.mkdir(parents=True, exist_ok=True)
         self.out_fp = (self.out_dir / "output.jsonl").open("a", encoding="utf-8")
         self.dup_fp = (self.out_dir / "skipped_duplicates.jsonl").open("a", encoding="utf-8")
 
-    def close_spider(self, spider):
+    def close_spider(self):
         if self.out_fp:
             self.out_fp.close()
         if self.dup_fp:
             self.dup_fp.close()
 
-    def process_item(self, item, spider):
+    def process_item(self, item):
         text_sha1 = item.get("text_sha1")
         if text_sha1 and text_sha1 in self.seen:
             self.dup_fp.write(json.dumps({

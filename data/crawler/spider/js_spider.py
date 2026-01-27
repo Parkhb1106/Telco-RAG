@@ -17,10 +17,19 @@ from crawler.utils import (
 class JsSpider(scrapy.Spider):
     name = "js_spider"
 
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        spider = super().from_crawler(crawler, *args, **kwargs)
+        # Now settings is set
+        out_dir = Path(spider.settings.get("OUT_DIR", "crawl_out"))
+        out_dir.mkdir(parents=True, exist_ok=True)
+        spider._err_fp = (out_dir / "errors.jsonl").open("a", encoding="utf-8")
+        return spider
+
     def __init__(
         self,
-        url_file="needs_js.jsonl",
-        follow_links=0,
+        url_file="crawl_out/needs_js.jsonl",
+        follow_links=1,
         allowed_domains="",
         allowed_paths="",
         allowed_meta_name="",
@@ -40,8 +49,10 @@ class JsSpider(scrapy.Spider):
         allowed_meta_name = allowed_meta_name.strip()
         allowed_meta_content = allowed_meta_content.strip()
         self.allowed_meta_filters = None
+        self._meta_filters_from_args = False
         if allowed_meta_name and allowed_meta_content:
             self.allowed_meta_filters = [(allowed_meta_name, allowed_meta_content)]
+            self._meta_filters_from_args = True
 
         self.drop_all_query = int(drop_all_query) == 1
         self.keep_query_keys = {k.strip() for k in keep_query_keys.split(",") if k.strip()} or None
@@ -51,12 +62,7 @@ class JsSpider(scrapy.Spider):
 
         self._err_fp = None
 
-    def open_spider(self, spider):
-        out_dir = Path(self.settings.get("OUT_DIR", "crawl_out"))
-        out_dir.mkdir(parents=True, exist_ok=True)
-        self._err_fp = (out_dir / "errors.jsonl").open("a", encoding="utf-8")
-
-    def close_spider(self, spider):
+    def close_spider(self):
         if self._err_fp:
             self._err_fp.close()
 
@@ -72,46 +78,80 @@ class JsSpider(scrapy.Spider):
         path_prefixes = set()
         meta_filters = set()
 
-        for line in raw.splitlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
+        def _normalize_list_field(value):
+            if isinstance(value, str):
+                return [value.strip()] if value.strip() else []
+            if isinstance(value, list):
+                return [v for v in (s.strip() if isinstance(s, str) else s for s in value) if v]
+            return []
 
-            if p.suffix == ".jsonl":
-                try:
-                    row = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                if not isinstance(row, dict):
-                    continue
-                u = normalize_url(row.get("url", ""))
+        def add_url(row_or_url):
+            if isinstance(row_or_url, str):
+                u = normalize_url(row_or_url)
                 if not u or u in seen:
-                    continue
-                seen.add(u)
-                urls.append(u)
-                if self.allowed_domains_list is None:
-                    for d in row.get("allowed_domains", []) or []:
-                        if d:
-                            domains.add(d.strip())
-                if self.allowed_path_prefixes is None:
-                    for pfx in row.get("allowed_paths", []) or []:
-                        if pfx:
-                            path_prefixes.add(pfx.strip())
-                if self.allowed_meta_filters is None:
-                    meta_name = (row.get("allowed_meta_name") or "").strip()
-                    meta_content = (row.get("allowed_meta_content") or "").strip()
-                    if meta_name and meta_content:
-                        meta_filters.add((meta_name, meta_content))
-            else:
-                u = normalize_url(line)
-                if not u or u in seen:
-                    continue
+                    return
                 seen.add(u)
                 urls.append(u)
                 try:
                     domains.add(scrapy.utils.url.parse_url(u).host)
                 except Exception:
                     pass
+                return
+
+            if not isinstance(row_or_url, dict):
+                return
+            u = normalize_url(row_or_url.get("url", ""))
+            if not u or u in seen:
+                return
+            seen.add(u)
+            urls.append(u)
+
+            if self.allowed_domains_list is None:
+                for d in _normalize_list_field(row_or_url.get("allowed_domains", [])):
+                    if d:
+                        domains.add(d.strip())
+            if self.allowed_path_prefixes is None:
+                for pfx in _normalize_list_field(row_or_url.get("allowed_paths", [])):
+                    if pfx:
+                        path_prefixes.add(pfx.strip())
+            if self.allowed_meta_filters is None:
+                meta_name = (row_or_url.get("allowed_meta_name") or "").strip()
+                meta_content = (row_or_url.get("allowed_meta_content") or "").strip()
+                if meta_name and meta_content:
+                    meta_filters.add((meta_name, meta_content))
+
+        if p.suffix == ".jsonl":
+            for line in raw.splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                add_url(row)
+        elif p.suffix == ".json":
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError:
+                payload = None
+            if isinstance(payload, list):
+                for entry in payload:
+                    add_url(entry)
+            elif isinstance(payload, dict):
+                add_url(payload)
+            else:
+                for line in raw.splitlines():
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    add_url(line)
+        else:
+            for line in raw.splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                add_url(line)
 
         # allowed_domains가 명시되지 않았으면 입력 URL들의 도메인으로 자동 구성
         if self.allowed_domains_list is None and domains:
@@ -127,7 +167,7 @@ class JsSpider(scrapy.Spider):
 
         return urls
 
-    def start_requests(self):
+    async def start(self):
         urls = self._load_urls_and_maybe_set_allowed_domains()
         if not urls:
             raise SystemExit(f"No URLs found in: {self.url_file}")
@@ -142,6 +182,7 @@ class JsSpider(scrapy.Spider):
                     "playwright_page_methods": [
                         PageMethod("wait_for_load_state", "networkidle"),
                     ],
+                    "is_seed": True,
                 },
             )
 
@@ -187,16 +228,30 @@ class JsSpider(scrapy.Spider):
                     "playwright_page_methods": [
                         PageMethod("wait_for_load_state", "networkidle"),
                     ],
+                    "is_seed": False,
                 },
             )
 
     def _page_allows_follow(self, response) -> bool:
-        if not self.allowed_meta_filters:
+        if not response.meta.get("is_seed"):
             return True
-        for meta_name, meta_content in self.allowed_meta_filters:
+
+        seed_info = response.meta.get("seed_info", {}) or {}
+        seed_meta_name = (seed_info.get("allowed_meta_name") or "").strip()
+        seed_meta_content = (seed_info.get("allowed_meta_content") or "").strip()
+
+        if seed_meta_name and seed_meta_content:
+            filters = [(seed_meta_name, seed_meta_content)]
+        elif self._meta_filters_from_args and self.allowed_meta_filters:
+            filters = self.allowed_meta_filters
+        else:
+            return True
+
+        for meta_name, meta_content in filters:
             values = response.css(f'meta[name="{meta_name}"]::attr(content)').getall()
             for value in values:
-                if (value or "").strip() == meta_content:
+                value = (value or "").strip()
+                if value and meta_content.lower() in value.lower():
                     return True
         return False
 
