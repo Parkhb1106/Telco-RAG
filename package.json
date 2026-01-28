@@ -12,6 +12,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@langchain/core": "^1.1.17",
+    "@langchain/textsplitters": "^1.0.1",
     "@mozilla/readability": "^0.4.2",
     "@next/font": "13.1.6",
     "@tabler/icons": "^2.4.0",
@@ -38,5 +40,4 @@
     "postcss": "^8.4.21",
     "tailwindcss": "^3.2.7"
   }
-
 }
