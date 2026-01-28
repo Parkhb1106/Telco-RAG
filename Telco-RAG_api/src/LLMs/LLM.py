@@ -322,10 +322,25 @@ async def a_submit_prompt_flex(prompt, model="gpt-4o-mini", output_json=False):
     return output
 
 def embedding(input, dimension=1024):
-    client = openai.OpenAI(api_key=openai.api_key)
-    response = client.embeddings.create(
-                    input=input,
-                    model="text-embedding-3-large",
-                    dimensions=dimension,
-                )
-    return response
+    from sentence_transformers import SentenceTransformer
+    import numpy as np
+    
+    model = SentenceTransformer("Qwen/Qwen3-Embedding-8B")
+    
+    # Handle both single string and list of strings
+    if isinstance(input, str):
+        embeddings = model.encode([input], normalize_embeddings=True)
+    else:
+        embeddings = model.encode(input, normalize_embeddings=True)
+    
+    # Create response object that mimics OpenAI API format
+    class EmbeddingResponse:
+        def __init__(self, embeddings_array):
+            self.data = []
+            for emb in embeddings_array:
+                class Embedding:
+                    def __init__(self, embedding_data):
+                        self.embedding = embedding_data.tolist() if isinstance(embedding_data, np.ndarray) else embedding_data
+                self.data.append(Embedding(emb))
+    
+    return EmbeddingResponse(embeddings)

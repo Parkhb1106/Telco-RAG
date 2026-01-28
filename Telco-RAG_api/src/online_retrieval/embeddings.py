@@ -1,4 +1,5 @@
-from openai import OpenAI
+from sentence_transformers import SentenceTransformer
+import numpy as np
 
 
 def get_embeddings_OpenAILarge_byapi(chunked_doc):
@@ -6,15 +7,9 @@ def get_embeddings_OpenAILarge_byapi(chunked_doc):
     for chunk in chunked_doc:
         text_list.append(chunk["text"])
     
-    client = OpenAI()
-    response = client.embeddings.create(
-                input=text_list,
-                model="text-embedding-3-large",
-                dimensions=1024,
-            )
-    embeddings = []
-    for i in range(len(response.data)):
-        embeddings.append(response.data[i].embedding)
+    # Use Qwen embedding model
+    model = SentenceTransformer("Qwen/Qwen3-Embedding-8B")
+    embeddings = model.encode(text_list, batch_size=32, normalize_embeddings=True)
     
     dex = dict()
     for i in range(len(embeddings)):

@@ -13,12 +13,16 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 def get_embeddings(series_docs):
     """Add embeddings to each chunk of documents from pre-saved NumPy files."""
+    # Load embeddings once from the shared file
+    try:
+        embeddings_array = np.load('../../data/db/embeddings.npy')
+    except FileNotFoundError:
+        logging.error("Embeddings file at ../../data/db/embeddings.npy not found.")
+        return series_docs
+    
     for doc_key, doc_chunks in series_docs.items():
         try:
-            embeddings = np.load(f'3GPP-Release18\Embeddings\Embeddings{doc_key}.npy')
-        except FileNotFoundError:
-            logging.error(f"Embedding file for {doc_key} not found.")
-            continue
+            embeddings = embeddings_array
         except Exception as e:
             logging.error(f"Failed to load embeddings for {doc_key}: {e}")
             continue
