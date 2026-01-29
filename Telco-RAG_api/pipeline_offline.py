@@ -58,6 +58,7 @@ def TelcoRAG(query, answer= None, options= None, model_name='gpt-4o-mini'):
         print(f"An error occurred: {e}")
         print(traceback.format_exc())
 
+"""
 if __name__ == "__main__":
     question =  {
         "question": "In supporting an MA PDU Session, what does Rel-17 enable in terms of 3GPP access over EPC? [3GPP Release 17]",
@@ -72,8 +73,47 @@ if __name__ == "__main__":
         "category": "Standards overview"
     }
     # Example using an MCQ
-    # response, context = TelcoRAG(question['question'], question['answer'], question['options'], model_name='/NAS/inno_aidev/local_models/Qwen2.5-Coder-7B-Instruct/' )
-    # print(response, '\n')
+    response, context = TelcoRAG(question['question'], question['answer'], question['options'], model_name='Qwen/Qwen3-32B' )
+    print(f"[Response]: {response}", '\n')
     # Example using an open-end question           
-    response, context = TelcoRAG(question['question'], model_name='/NAS/inno_aidev/local_models/Qwen2.5-Coder-7B-Instruct/' )
-    print(response, '\n')
+    # response, context = TelcoRAG(question['question'], model_name='/NAS/inno_aidev/local_models/Qwen2.5-Coder-7B-Instruct/' )
+    # print(response, '\n')
+"""
+    
+#"""
+if __name__ == "__main__":
+    print("=== START ===")
+    print("for stopping, enter 'exit' or 'quit'\n")
+
+    while True:
+        try:
+            # 사용자 입력 받기
+            user_query = input("User Query: ").strip()
+
+            # 종료 조건 확인
+            if user_query.lower() in ['exit', 'quit']:
+                print("program exitted.")
+                break
+            
+            if not user_query:
+                continue
+            
+            # Open-ended
+            response, context = TelcoRAG(
+                query=user_query, 
+                answer=None, 
+                options=None, 
+                model_name='Qwen/Qwen3-32B'
+            )
+            
+            print("-" * 50)
+            print(f"[Response]:\n{response}")
+            print("-" * 50 + "\n")
+
+        except KeyboardInterrupt:
+            print("\n\ndetect interrupt. program exitted.")
+            break
+        except Exception as e:
+            print(f"\nERROR: {e}")
+            traceback.print_exc()
+#"""

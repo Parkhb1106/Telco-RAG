@@ -327,7 +327,7 @@ def embedding(input, dimension=1024):
     response = client.embeddings.create(
                     input=input,
                     # NNRouter는 1024-d 임베딩에 맞춰져 있으므로 1024-d 모델 사용
-                    model="BAAI/bge-large-en-v1.5",
+                    model="Qwen/Qwen3-Embedding-0.6B",
                 )
     return response
 

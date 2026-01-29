@@ -31,7 +31,7 @@ print("N texts =", len(meta))
 print("example length =", len(meta[0]["text"]))
 
 # ====== 임베딩 ======
-model = SentenceTransformer("BAAI/bge-large-en-v1.5")
+model = SentenceTransformer("Qwen/Qwen3-Embedding-0.6B")
 embeddings  = model.encode([m["text"] for m in meta], batch_size=32, normalize_embeddings=True, show_progress_bar=True)
 print("embeddings:", embeddings.shape)  # (N, 768)
 
