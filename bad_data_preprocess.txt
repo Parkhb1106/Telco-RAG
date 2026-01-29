@@ -1,0 +1,8 @@
+/NAS/inno_aidev/users/hbpark/Telco-RAG/data/3gpp/3gpp_docx_cleaned/38331-i80.docx
+/NAS/inno_aidev/users/hbpark/Telco-RAG/data/3gpp/3gpp_docx_cleaned/24301-i90.docx
+/NAS/inno_aidev/users/hbpark/Telco-RAG/data/3gpp/3gpp_docx_cleaned/36331-i80.docx
+/NAS/inno_aidev/users/hbpark/Telco-RAG/data/3gpp/3gpp_docx_cleaned/24501-id0.docx
+/NAS/inno_aidev/users/hbpark/Telco-RAG/data/3gpp/3gpp_docx_cleaned/38331-i80.docx
+/NAS/inno_aidev/users/hbpark/Telco-RAG/data/3gpp/3gpp_docx_cleaned/24301-i90.docx
+/NAS/inno_aidev/users/hbpark/Telco-RAG/data/3gpp/3gpp_docx_cleaned/36331-i80.docx
+/NAS/inno_aidev/users/hbpark/Telco-RAG/data/3gpp/3gpp_docx_cleaned/24501-id0.docx

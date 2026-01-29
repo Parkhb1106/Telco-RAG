@@ -3,3 +3,4 @@ source .venv/bin/activate
 pip install unstructured python-docx
 python data/3gpp/clean_docx.py
 python data/3gpp/chunking_docx.py
+python data/3gpp/chunks_setup.py

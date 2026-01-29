@@ -47,3 +47,21 @@ def get_embeddings(series_docs):
         series_docs[doc_key] = updated_chunks
     return series_docs
 
+def get_embeddings_custom():
+    embeddings = np.load("data/db/embeddings.npy")
+    # TODO : connect embedding values at data/db/embeddings.npy with metadatas at data/db/meta.jsonl and make struct like below. 각 text chunk에 맞는 embedding이 잘 매칭되도록 구현.
+    """
+    embedded_datas = [[
+    {
+    'text' = '...', 
+    'source' = '...', 
+    'embedding' = array([0.xxx...,])
+    }, {
+    'text' = '...', 
+    'source' = '...', 
+    'embedding' = array([0.xxx...,])
+    }, ...
+    ]]
+    """
+    
+    return embedded_datas

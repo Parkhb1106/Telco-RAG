@@ -338,11 +338,9 @@ def main():
         for i, ch in enumerate(chunks):
             all_chunks.append(
                 {
-                    "element_id": f"{p.stem}__{i}",
-                    "source_file": str(p).replace("\\", "/"),
-                    "chunk_index": i,
+                    "id": f"{p.stem}__{i}",
                     "text": ch,
-                    "char_len": len(ch),
+                    "source": str(p).replace("\\", "/")
                 }
             )
 

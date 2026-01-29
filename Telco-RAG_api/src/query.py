@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from src.retrieval import find_nearest_neighbors_faiss
 from src.index import get_faiss_batch_index
 from src.online_retrieval.pdf_reader import fetch_snippets_and_search
-from src.embeddings import get_embeddings
+from src.embeddings import get_embeddings, get_embeddings_custom
 from src.get_definitions import define_TA_question
 from src.input import get_documents
 from src.chunking import chunk_doc
@@ -171,6 +171,15 @@ class Query:
         old_series = {'Summaries': series_docs['Summaries'], **{f'Series{series_number}': series_docs[f'Series{series_number}'] for series_number in self.wg if series_number in old_list}}
         
         embedded_docs = [serie for serie in new_series.values()] + [serie for serie in old_series.values()]
+        if validate_flag:
+            self.get_question_context_faiss(batch=embedded_docs, k=2*k, use_context=True)
+            self.validate_context(model_name=model_name, k=k, UI_flag=UI_flag)
+        else:  
+            self.get_question_context_faiss(batch=embedded_docs, k=k, use_context=True)
+          
+  
+    def get_custom_context(self, k=10, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
+        embedded_docs = get_embeddings_custom()
         if validate_flag:
             self.get_question_context_faiss(batch=embedded_docs, k=2*k, use_context=True)
             self.validate_context(model_name=model_name, k=k, UI_flag=UI_flag)
