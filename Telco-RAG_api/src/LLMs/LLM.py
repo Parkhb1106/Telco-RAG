@@ -1,6 +1,7 @@
 import openai
 import tiktoken
-
+from sentence_transformers import SentenceTransformer
+from functools import lru_cache
 import asyncio
 
 import anthropic # type: ignore
@@ -187,7 +188,7 @@ def submit_prompt_flex(prompt, model="gpt-4o-mini", output_json=False):
         print(f"Endpoint: {endpoint}")
         print(f"Model: {model_fullname}")
         client = openai.OpenAI(
-            base_url = "https://api.endpoints.anyscale.com/v1",
+            base_url = "http://localhost:8000/v1",
             api_key=any_api_key,
         )
         generate = client.chat.completions.create        
@@ -322,25 +323,29 @@ async def a_submit_prompt_flex(prompt, model="gpt-4o-mini", output_json=False):
     return output
 
 def embedding(input, dimension=1024):
-    from sentence_transformers import SentenceTransformer
-    import numpy as np
-    
-    model = SentenceTransformer("Qwen/Qwen3-Embedding-8B")
-    
-    # Handle both single string and list of strings
-    if isinstance(input, str):
-        embeddings = model.encode([input], normalize_embeddings=True)
-    else:
-        embeddings = model.encode(input, normalize_embeddings=True)
-    
-    # Create response object that mimics OpenAI API format
-    class EmbeddingResponse:
-        def __init__(self, embeddings_array):
-            self.data = []
-            for emb in embeddings_array:
-                class Embedding:
-                    def __init__(self, embedding_data):
-                        self.embedding = embedding_data.tolist() if isinstance(embedding_data, np.ndarray) else embedding_data
-                self.data.append(Embedding(emb))
-    
-    return EmbeddingResponse(embeddings)
+    client = openai.OpenAI(api_key=openai.api_key, base_url="http://localhost:8001/v1/")
+    response = client.embeddings.create(
+                    input=input,
+                    # NNRouter는 1024-d 임베딩에 맞춰져 있으므로 1024-d 모델 사용
+                    model="BAAI/bge-large-en-v1.5",
+                )
+    return response
+
+    # class _EmbeddingItem:
+    #     def __init__(self, embedding):
+    #         self.embedding = embedding
+
+    # class _EmbeddingResponse:
+    #     def __init__(self, embeddings):
+    #         self.data = [_EmbeddingItem(emb) for emb in embeddings]
+
+    # @lru_cache(maxsize=1)
+    # def _get_embedder():
+    #     return SentenceTransformer("BAAI/bge-large-en-v1.5")
+
+    # model = _get_embedder()
+    # vecs = model.encode(input, normalize_embeddings=True)
+    # embeddings = vecs.tolist() if hasattr(vecs, "tolist") else list(vecs)
+    # if embeddings and isinstance(embeddings[0], (int, float)):
+    #     embeddings = [embeddings]
+    # return _EmbeddingResponse(embeddings)

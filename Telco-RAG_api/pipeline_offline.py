@@ -22,28 +22,27 @@ def TelcoRAG(query, answer= None, options= None, model_name='gpt-4o-mini'):
         start =  time.time()
         question = Query(query, [])
 
-        query = question.question
+        query = question.question # Query 객체에서 원본 질문 문자열을 꺼내서 로컬 변수 query에 복사
         conciseprompt=f"""Rephrase the question to be clear and concise:
         
         {question.question}"""
 
        
-        concisequery = submit_prompt_flex(conciseprompt, model=model_name).rstrip('"')
+        concisequery = submit_prompt_flex(conciseprompt, model=model_name).rstrip('"') # 질문을 더 간단하고 명확하게
+        print(concisequery)
+        question.query = concisequery # 약어, 통신 표준 용어가 붙음.
 
-        question.query = concisequery
-
-        question.def_TA_question()
+        question.def_TA_question() # 질문을 주제 분류용으로 정규화/보정 : 
         print()
         print('#'*50)
         print(concisequery)
         print('#'*50)
         print()
 
-        question.get_3GPP_context(k=10, model_name=model_name, validate_flag=False)
+        question.get_3GPP_context(k=10, model_name=model_name, validate_flag=False) # 근거 문맥을 3GPP 문서에서 뽑아오는 단계
 
-        print(answer)
         if answer is not None:
-            response, context , _ = check_question(question, answer, options, model_name=model_name)
+            response, context , _ = check_question(question, answer, options, model_name=model_name) # 컨텍스트와 옵션을 포함한 프롬프트를 만들어 LLM에 답을 생성
             print(context)
             end=time.time()
             print(f'Generation of this response took {end-start} seconds')
@@ -71,9 +70,9 @@ if __name__ == "__main__":
         "explanation": "Rel-17 enables the establishment of user-plane resources over EPC for 3GPP access in supporting an MA PDU Session, allowing for simultaneous traffic over EPC and non-3GPP access.",
         "category": "Standards overview"
     }
-    # Example using an MCQ
-    response, context = TelcoRAG(question['question'], question['answer'], question['options'], model_name='gpt-4o-mini' )
-    print(response, '\n')
+    # # Example using an MCQ
+    # response, context = TelcoRAG(question['question'], question['answer'], question['options'], model_name='gpt-4o-mini' )
+    # print(response, '\n')
     # Example using an open-end question           
-    response, context = TelcoRAG(question['question'], model_name='gpt-4o-mini' )
+    response, context = TelcoRAG(question['question'], model_name='/NAS/inno_aidev/local_models/Qwen2.5-Coder-7B-Instruct/' )
     print(response, '\n')

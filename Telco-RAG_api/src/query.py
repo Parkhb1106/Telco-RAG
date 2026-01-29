@@ -27,7 +27,9 @@ class Query:
         self.wg = []
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = NNRouter()
-        self.model.load_state_dict(torch.load(r'.\\src\\resources\\router_new.pth', map_location='cpu'))
+        resources_dir = os.path.join(os.path.dirname(__file__), "resources") #라우팅 모델을 파일에서 읽어옴.
+        router_path = os.path.join(resources_dir, "router_new.pth")
+        self.model.load_state_dict(torch.load(router_path, map_location='cpu'))
         self.model.to(self.device)
         self.model.eval()
         self.original_labels_mapping = np.arange(21, 39)
@@ -67,7 +69,8 @@ class Query:
     
     @staticmethod
     def get_col2(embeddings_list):
-        file_path = r'.\\src\\resources\\series_description.json'
+        resources_dir = os.path.join(os.path.dirname(__file__), "resources")
+        file_path = os.path.join(resources_dir, "series_description.json")
         if os.path.isfile(file_path):
             with open(file_path, 'r') as file:
                 series_dict = json.load(file)
@@ -148,8 +151,8 @@ class Query:
         self.context = validator_RAG(self.question, self.context, model_name=model_name, k=k, UI_flag=UI_flag)
         
     def get_3GPP_context(self, k=10, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
-        self.predict_wg()
-        document_ds = get_documents(self.wg)
+        self.predict_wg() # 3GPP 시리즈를 예측
+        document_ds = get_documents(self.wg) #해당 시리즈 문서 로딩
         Document_ds = [chunk_doc(doc) for doc in document_ds]
         series_doc = {'Summaries': []}
         for series_number in self.wg:

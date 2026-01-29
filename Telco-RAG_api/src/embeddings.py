@@ -1,4 +1,5 @@
 import logging
+import os
 import numpy as np
 import traceback
 from src.LLMs.LLM import embedding
@@ -13,16 +14,14 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 def get_embeddings(series_docs):
     """Add embeddings to each chunk of documents from pre-saved NumPy files."""
-    # Load embeddings once from the shared file
-    try:
-        embeddings_array = np.load('../../data/db/embeddings.npy')
-    except FileNotFoundError:
-        logging.error("Embeddings file at ../../data/db/embeddings.npy not found.")
-        return series_docs
-    
     for doc_key, doc_chunks in series_docs.items():
         try:
-            embeddings = embeddings_array
+            base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+            embedding_path = os.path.join(base_dir, "3GPP-Release18", "Embeddings", f"Embeddings{doc_key}.npy")
+            embeddings = np.load(embedding_path)
+        except FileNotFoundError:
+            logging.error(f"Embedding file for {doc_key} not found.")
+            continue
         except Exception as e:
             logging.error(f"Failed to load embeddings for {doc_key}: {e}")
             continue
