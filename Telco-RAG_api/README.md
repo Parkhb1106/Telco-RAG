@@ -1,0 +1,1 @@
+python Telco-RAG_api/pipeline_offline.py

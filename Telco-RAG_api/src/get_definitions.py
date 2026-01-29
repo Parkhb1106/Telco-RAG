@@ -97,6 +97,11 @@ def define_TA_question(sentence):
     resources_dir = os.path.join(os.path.dirname(__file__), "resources")
     file_path = os.path.join(resources_dir, "3GPP_vocabulary.docx")
     terms_definitions, abbreviations_definitions = read_docx(file_path)
+    # add custom term, abbreviation definitions if needed
+    """
+    terms_definitions.add~~
+    abbreviations_definitions.add~~
+    """
     formatted_terms, formatted_abbreviations = find_terms_and_abbreviations_in_sentence(terms_definitions, abbreviations_definitions, sentence)
     terms = '\n'.join(formatted_terms)
     abbreviations = '\n'.join(formatted_abbreviations)

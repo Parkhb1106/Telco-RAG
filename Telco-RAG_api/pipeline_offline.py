@@ -39,7 +39,8 @@ def TelcoRAG(query, answer= None, options= None, model_name='gpt-4o-mini'):
         print('#'*50)
         print()
 
-        question.get_3GPP_context(k=10, model_name=model_name, validate_flag=False) # 근거 문맥을 3GPP 문서에서 뽑아오는 단계
+        # question.get_3GPP_context(k=10, model_name=model_name, validate_flag=False) # 근거 문맥을 3GPP 문서에서 뽑아오는 단계
+        question.get_custom_context(k=10, model_name=model_name, validate_flag=False) # 근거 문맥을 3GPP 문서에서 뽑아오는 단계
 
         if answer is not None:
             response, context , _ = check_question(question, answer, options, model_name=model_name) # 컨텍스트와 옵션을 포함한 프롬프트를 만들어 LLM에 답을 생성
@@ -70,8 +71,8 @@ if __name__ == "__main__":
         "explanation": "Rel-17 enables the establishment of user-plane resources over EPC for 3GPP access in supporting an MA PDU Session, allowing for simultaneous traffic over EPC and non-3GPP access.",
         "category": "Standards overview"
     }
-    # # Example using an MCQ
-    # response, context = TelcoRAG(question['question'], question['answer'], question['options'], model_name='gpt-4o-mini' )
+    # Example using an MCQ
+    # response, context = TelcoRAG(question['question'], question['answer'], question['options'], model_name='/NAS/inno_aidev/local_models/Qwen2.5-Coder-7B-Instruct/' )
     # print(response, '\n')
     # Example using an open-end question           
     response, context = TelcoRAG(question['question'], model_name='/NAS/inno_aidev/local_models/Qwen2.5-Coder-7B-Instruct/' )

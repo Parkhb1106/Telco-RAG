@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import numpy as np
@@ -48,20 +49,30 @@ def get_embeddings(series_docs):
     return series_docs
 
 def get_embeddings_custom():
-    embeddings = np.load("data/db/embeddings.npy")
-    # TODO : connect embedding values at data/db/embeddings.npy with metadatas at data/db/meta.jsonl and make struct like below. 각 text chunk에 맞는 embedding이 잘 매칭되도록 구현.
-    """
-    embedded_datas = [[
-    {
-    'text' = '...', 
-    'source' = '...', 
-    'embedding' = array([0.xxx...,])
-    }, {
-    'text' = '...', 
-    'source' = '...', 
-    'embedding' = array([0.xxx...,])
-    }, ...
-    ]]
-    """
-    
-    return embedded_datas
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    embeddings_path = os.path.join(base_dir, "data", "db", "embeddings.npy")
+    meta_path = os.path.join(base_dir, "data", "db", "meta.jsonl")
+
+    embeddings = np.load(embeddings_path, mmap_mode="r")
+    meta = []
+    with open(meta_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            item = json.loads(line)
+            if isinstance(item, list) and item:
+                item = item[0]
+            meta.append(item)
+
+    limit = min(len(meta), embeddings.shape[0])
+    embedded_doc = [None] * limit
+    for i in range(limit):
+        m = meta[i]
+        embedded_doc[i] = {
+            "text": m.get("text"),
+            "source": m.get("source"),
+            "embedding": np.asarray(embeddings[i]),
+        }
+
+    return [embedded_doc]
