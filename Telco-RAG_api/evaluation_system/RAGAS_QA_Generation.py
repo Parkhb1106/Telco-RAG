@@ -1,12 +1,11 @@
 import os
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from langchain.schema import Document
-from ragas.testset.generator import TestsetGenerator
-from ragas.testset.evolutions import simple, reasoning, multi_context, conditional
+from langchain_core.documents import Document
+from ragas.testset import TestsetGenerator
+from ragas.testset.synthesizers import default_query_distribution
 from ragas.llms import LangchainLLMWrapper
 from ragas.embeddings import LangchainEmbeddingsWrapper
-from ragas.testset.docstore import InMemoryDocumentStore
 
 try:
     import ujson as json
@@ -14,7 +13,7 @@ except ImportError:
     import json
 
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 META_PATH = os.path.join(BASE_DIR, "data", "db", "meta.jsonl")
 MODEL_NAME = "Qwen/Qwen3-30B-A3B-Instruct-2507"
 EMBED_MODEL_NAME = "Qwen/Qwen3-Embedding-0.6B"
@@ -47,8 +46,7 @@ def load_documents(meta_path=META_PATH):
 
 def generate_testset(
     meta_path=META_PATH,
-    test_size=100,
-    distributions=None,
+    test_size=40,
 ):
     docs = load_documents(meta_path)
 
@@ -60,30 +58,19 @@ def generate_testset(
     )
 
     generator_llm = LangchainLLMWrapper(model, tokenizer)
-    critic_llm = LangchainLLMWrapper(model, tokenizer)
-    embeddings = LangchainEmbeddingsWrapper(model_name=EMBED_MODEL_NAME)
+    generator_embeddings = LangchainEmbeddingsWrapper(model_name=EMBED_MODEL_NAME)
 
-    docstore = InMemoryDocumentStore.from_documents(docs)
-
-    generator = TestsetGenerator.from_langchain(
-        generator_llm,
-        critic_llm,
-        embeddings,
-        docstore=docstore,
+    generator = TestsetGenerator(
+        llm=generator_llm,
+        embedding_model=generator_embeddings,
     )
 
-    if distributions is None:
-        distributions = {
-            simple: 0.4,
-            reasoning: 0.2,
-            multi_context: 0.2,
-            conditional: 0.2,
-        }
+    query_distribution = default_query_distribution(llm=generator_llm)
 
-    testset = generator.generate_with_langchain_docs(
-        documents=docs,
-        test_size=test_size,
-        distributions=distributions,
+    testset = generator.generate_with_chunks(
+        chunks=docs,
+        testset_size=test_size,
+        query_distribution=query_distribution,
         with_debugging_logs=True,
         raise_exceptions=False,
     )

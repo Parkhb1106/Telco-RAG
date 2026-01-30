@@ -1,0 +1,8 @@
+pandas
+# torch
+datasets
+ragas
+transformers
+langchain
+# ujson
+accelerate

@@ -23,14 +23,14 @@ def TelcoRAG(query, answer= None, options= None, model_name='gpt-4o-mini'):
         question = Query(query, [])
 
         query = question.question # Query 객체에서 원본 질문 문자열을 꺼내서 로컬 변수 query에 복사
-        #conciseprompt=f"""Rephrase the question to be clear and concise:
+        conciseprompt=f"""Rephrase the question to be clear and concise:
         
-        #{question.question}"""
+        {question.question}"""
 
        
-        #concisequery = submit_prompt_flex(conciseprompt, model=model_name).rstrip('"') # 질문을 더 간단하고 명확하게
-        #print(concisequery)
-        #question.query = concisequery # 약어, 통신 표준 용어가 붙음.
+        concisequery = submit_prompt_flex(conciseprompt, model=model_name).rstrip('"') # 질문을 더 간단하고 명확하게
+        print(concisequery)
+        question.query = concisequery # 약어, 통신 표준 용어가 붙음.
 
         question.def_TA_question() # 질문을 주제 분류용으로 정규화/보정 : 
         print()
