@@ -1,0 +1,2 @@
+# TODO : implement evauation system of ./pipeline_offline.py using RAGAS, ragas_qa_dataset from RAGAS_QA_Generation.py
+from ragas

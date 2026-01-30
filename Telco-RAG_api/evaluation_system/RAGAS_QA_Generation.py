@@ -14,11 +14,11 @@ except ImportError:
     import json
 
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "."))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 META_PATH = os.path.join(BASE_DIR, "data", "db", "meta.jsonl")
 MODEL_NAME = "Qwen/Qwen3-30B-A3B-Instruct-2507"
 EMBED_MODEL_NAME = "Qwen/Qwen3-Embedding-0.6B"
-OUTPUT_DIR = os.path.join(BASE_DIR, "evaluation_system")
+OUTPUT_DIR = os.path.join(BASE_DIR, "Telco-RAG_api", "evaluation_system")
 OUTPUT_BASENAME = "ragas_qa_dataset"
 
 
@@ -47,7 +47,7 @@ def load_documents(meta_path=META_PATH):
 
 def generate_testset(
     meta_path=META_PATH,
-    test_size=10,
+    test_size=100,
     distributions=None,
 ):
     docs = load_documents(meta_path)
