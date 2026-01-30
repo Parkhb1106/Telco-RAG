@@ -1,6 +1,6 @@
 import os
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from langchain_core.documents import Document
 from ragas.testset import TestsetGenerator
 from ragas.testset.synthesizers import default_query_distribution
@@ -11,6 +11,17 @@ try:
     import ujson as json
 except ImportError:
     import json
+    
+try:
+    from langchain_community.llms import HuggingFacePipeline
+except ImportError:
+    from langchain_huggingface import HuggingFacePipeline  # 일부 환경
+
+try:
+    from langchain_community.embeddings import HuggingFaceEmbeddings as LCHuggingFaceEmbeddings
+except ImportError:
+    from langchain_huggingface import HuggingFaceEmbeddings as LCHuggingFaceEmbeddings  # 일부 환경
+
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -57,8 +68,20 @@ def generate_testset(
         device_map="auto",
     )
 
-    generator_llm = LangchainLLMWrapper(model, tokenizer)
-    generator_embeddings = LangchainEmbeddingsWrapper(model_name=EMBED_MODEL_NAME)
+    gen_pipe = pipeline(
+        task="text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        max_new_tokens=512,
+        do_sample=False,       # 테스트셋 생성 안정성 위해 보통 False 권장
+        temperature=0.0,
+        return_full_text=False,
+    )
+    lc_llm = HuggingFacePipeline(pipeline=gen_pipe)
+    generator_llm = LangchainLLMWrapper(lc_llm)
+    
+    lc_emb = LCHuggingFaceEmbeddings(model_name=EMBED_MODEL_NAME)
+    generator_embeddings = LangchainEmbeddingsWrapper(lc_emb)
 
     generator = TestsetGenerator(
         llm=generator_llm,
@@ -93,3 +116,4 @@ def save_testset(testset, output_dir=OUTPUT_DIR, basename=OUTPUT_BASENAME):
 if __name__ == "__main__":
     testset = generate_testset()
     test_df, csv_path, jsonl_path = save_testset(testset)
+    print("Saved:", csv_path, jsonl_path)

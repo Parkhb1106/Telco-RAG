@@ -19,7 +19,7 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DEFAULT_DATASET_DIR = os.path.join(BASE_DIR, "evaluation_system")
 DEFAULT_BASENAME = "ragas_qa_dataset"
 
-DEFAULT_MODEL_NAME = os.getenv("TELCORAG_MODEL_NAME", "Qwen/Qwen3-32B")
+DEFAULT_MODEL_NAME = os.getenv("TELCORAG_MODEL_NAME", "Qwen/Qwen3-30B-A3B-Instruct-2507")
 EVAL_LLM_MODEL = os.getenv("RAGAS_EVAL_LLM", "Qwen/Qwen3-30B-A3B-Instruct-2507")
 EVAL_EMBED_MODEL = os.getenv("RAGAS_EVAL_EMBED", "Qwen/Qwen3-Embedding-0.6B")
 

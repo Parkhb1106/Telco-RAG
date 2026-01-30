@@ -103,7 +103,7 @@ if __name__ == "__main__":
                 query=user_query, 
                 answer=None, 
                 options=None, 
-                model_name='Qwen/Qwen3-32B'
+                model_name='Qwen/Qwen3-30B-A3B-Instruct-2507'
             )
             
             print("-" * 50)
