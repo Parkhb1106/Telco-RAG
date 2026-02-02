@@ -97,6 +97,11 @@ def check_question(question, answer, options, model_name='gpt-4o-mini'):
         predicted_answers_str = submit_prompt_flex(syst_prompt, model=model_name)
         predicted_answers_str = predicted_answers_str.replace('"\n', '",\n')
         print(predicted_answers_str)
+        
+        if answer is None:
+            context = f"The retrieved context provided to the LLM is:\n{content}"
+            return predicted_answers_str, context, question.question
+        
         print(answer)
 
         # Finding and comparing the predicted answer to the actual answer.

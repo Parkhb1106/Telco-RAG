@@ -48,6 +48,12 @@ def TelcoRAG(query, answer= None, options= None, model_name='gpt-4o-mini'):
             end=time.time()
             print(f'Generation of this response took {end-start} seconds')
             return response, question.context
+        elif options is not None:
+            response, context , _ = check_question(question, answer, options, model_name=model_name) # 컨텍스트와 옵션을 포함한 프롬프트를 만들어 LLM에 답을 생성
+            print(context)
+            end=time.time()
+            print(f'Generation of this response took {end-start} seconds')
+            return response, context
         else:
             response, context, _ = generate(question, model_name)
             end=time.time()

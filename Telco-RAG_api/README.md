@@ -13,3 +13,18 @@ vllm serve Qwen/Qwen3-Embedding-0.6B \
   --gpu_memory_utilization 0.2
 
 python Telco-RAG/Telco-RAG_api/pipeline_offline.py
+
+pip install -r Telco-RAG/Telco-RAG_api/evaluation_system/requirements.txt
+python Telco-RAG/Telco-RAG_api/evaluation_system/RAGAS_QA_Generation.py
+python Telco-RAG/Telco-RAG_api/evaluation_system/RAGAS_Evaluation
+
+cd Telco-RAG/Telco-RAG_api
+export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx
+# [REDACTED_HF_TOKEN]
+
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/mcp_TeleQnA.py --limit 10 --shuffle
+
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/mcp_TeleQnA.py --sleep 0.2
+

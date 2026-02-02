@@ -1,5 +1,5 @@
 import os
-import torch
+import random
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from langchain_core.documents import Document
 from ragas.testset import TestsetGenerator
@@ -12,16 +12,8 @@ try:
 except ImportError:
     import json
     
-try:
-    from langchain_community.llms import HuggingFacePipeline
-except ImportError:
-    from langchain_huggingface import HuggingFacePipeline  # 일부 환경
-
-try:
-    from langchain_community.embeddings import HuggingFaceEmbeddings as LCHuggingFaceEmbeddings
-except ImportError:
-    from langchain_huggingface import HuggingFaceEmbeddings as LCHuggingFaceEmbeddings  # 일부 환경
-
+from langchain_huggingface import HuggingFacePipeline
+from langchain_huggingface import HuggingFaceEmbeddings as LCHuggingFaceEmbeddings
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -60,11 +52,15 @@ def generate_testset(
     test_size=40,
 ):
     docs = load_documents(meta_path)
+    
+    random.seed(42)
+    if len(docs) > 1000:
+        docs = random.sample(docs, 1000)
 
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME,
-        torch_dtype="auto",
+        dtype="auto",
         device_map="auto",
     )
 
@@ -72,9 +68,9 @@ def generate_testset(
         task="text-generation",
         model=model,
         tokenizer=tokenizer,
-        max_new_tokens=512,
-        do_sample=False,       # 테스트셋 생성 안정성 위해 보통 False 권장
-        temperature=0.0,
+        batch_size=8,
+        max_new_tokens=128,
+        do_sample=False,
         return_full_text=False,
     )
     lc_llm = HuggingFacePipeline(pipeline=gen_pipe)

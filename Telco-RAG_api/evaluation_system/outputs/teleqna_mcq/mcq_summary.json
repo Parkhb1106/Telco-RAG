@@ -1,0 +1,35 @@
+{
+  "dataset": "netop/TeleQnA",
+  "split": "test",
+  "model_name": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "n_evaluated": 10,
+  "accuracy": 0.1,
+  "correct": 1,
+  "elapsed_sec": 8.548953771591187,
+  "accuracy_by_category": {
+    "Research overview": {
+      "n": 4,
+      "correct": 1,
+      "accuracy": 0.25
+    },
+    "Research publications": {
+      "n": 2,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "Standards overview": {
+      "n": 1,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "Standards specifications": {
+      "n": 3,
+      "correct": 0,
+      "accuracy": 0.0
+    }
+  },
+  "outputs": {
+    "details_jsonl": "evaluation_system/outputs/teleqna_mcq/mcq_details.jsonl",
+    "summary_json": "evaluation_system/outputs/teleqna_mcq/mcq_summary.json"
+  }
+}
