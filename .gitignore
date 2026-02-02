@@ -2,7 +2,7 @@
 /data/web/output/
 /data/web/output_cleaned/
 /data/web/web_chunks/
-/data/3gpp/3gpp_docx/
+# /data/3gpp/3gpp_docx/
 /data/3gpp/3gpp_docx_cleaned/
 /data/3gpp/3gpp_chuncks/
 /data/db/embeddings.npy
