@@ -28,11 +28,10 @@ python Telco-RAG/Telco-RAG_api/evaluation_system/RAGAS_Evaluation
 
 cd Telco-RAG/Telco-RAG_api
 export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx
-# [REDACTED_HF_TOKEN]
+# (paste your Hugging Face token here; do not commit real tokens)
 
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
 python /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/mcp_TeleQnA.py --limit 10 --shuffle
 
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
 python /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/mcp_TeleQnA.py --sleep 0.2
-
