@@ -24,6 +24,7 @@ import json
 import os
 import re
 import time
+import asyncio
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -32,7 +33,8 @@ from datasets import load_dataset  # pip install datasets
 from tqdm import tqdm  # pip install tqdm
 
 try:
-    from pipeline_offline import TelcoRAG  # type: ignore
+    #from pipeline_offline import TelcoRAG  # type: ignore
+    from pipeline_online import TelcoRAG  # type: ignore
 except Exception as e:
     raise RuntimeError(
         "Failed to import TelcoRAG from pipeline_offline.py. "
@@ -187,12 +189,12 @@ def main() -> None:
             context: Any = None
             err: Optional[str] = None
             try:
-                resp, context = TelcoRAG(
+                resp, context = asyncio.run(TelcoRAG(
                     query=q,
                     answer=None,
                     options=options_dict,  # normalized dict ("option N": text)
                     model_name=args.model_name,
-                )
+                ))
                 raw_resp_text = "" if resp is None else str(resp)
             except Exception as e:
                 err = f"{type(e).__name__}: {e}"

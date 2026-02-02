@@ -13,6 +13,10 @@ vllm serve Qwen/Qwen3-Embedding-0.6B \
   --gpu_memory_utilization 0.2
 
 python Telco-RAG/Telco-RAG_api/pipeline_offline.py
+python Telco-RAG/Telco-RAG_api/pipeline_online.py
+
+
+
 
 python Telco-RAG/Telco-RAG_api/evaluation_system/RAGAS_QA_Generation.py \
   --embeddings Telco-RAG/data/db/embeddings.npy \

@@ -287,10 +287,10 @@ async def a_submit_prompt_flex(prompt, model="gpt-4o-mini", output_json=False):
         print(f"Endpoint: {endpoint}")
         print(f"Model: {model_fullname}")
         client = openai.AsyncOpenAI(
-            base_url = "https://api.endpoints.anyscale.com/v1",
+            base_url = "http://localhost:8000/v1",
             api_key=any_api_key,
         )
-        generate = client.chat.completions.create        
+        generate = client.chat.completions.create       
 
     if output_json:
         generated_output = await generate(

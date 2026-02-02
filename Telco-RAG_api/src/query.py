@@ -190,19 +190,20 @@ class Query:
     async def get_online_context(self, model_name='gpt-4o-mini', validator_flag= True, options=None):
         if options is None:
             querytoOSINT = f"""Rephrase the following question so that it can be a concise google search query to find the answer to my original question (O.S.I.N.T. syle)
-
-        {self.question}"""
+            {self.question}"""
         else:
-            querytoOSINT = f"""Rephrase the following multiple choice question so that it can be a concise google search query to find the answer to my original question (O.S.I.N.T. syle)
-
-            {self.question}
-    Answer options:
-    {options}"""
+            querytoOSINT = f"""Rephrase the following question so that it can be a concise google search query to find the answer to my original question (O.S.I.N.T. syle)
+            {self.question}"""
+            # querytoOSINT = f"""Rephrase the following multiple choice question so that it can be a concise google search query to find the answer to my original question (O.S.I.N.T. syle)
+            # {self.question}
+            # Answer options:
+            # {options}"""
         osintquery = await a_submit_prompt_flex(querytoOSINT, model=model_name)
+        osintquery = osintquery.replace("O.S.I.N.T.", "").replace("OSINT", "").strip()
         print("_"*100)
         print(osintquery)
         try:
-            online_info = await fetch_snippets_and_search(query= osintquery.rstrip('"'), question=self.question, model_name=model_name, validator=validator_flag, UI=False)     
+            online_info = await fetch_snippets_and_search(query= osintquery.strip('"'), question=self.question, model_name=model_name, validator=validator_flag, UI=False)     
         except:
             online_info = await fetch_snippets_and_search(query= self.question, question=self.question, model_name=model_name, validator=validator_flag, UI=False)
 
