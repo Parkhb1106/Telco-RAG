@@ -14,8 +14,12 @@ vllm serve Qwen/Qwen3-Embedding-0.6B \
 
 python Telco-RAG/Telco-RAG_api/pipeline_offline.py
 
-pip install -r Telco-RAG/Telco-RAG_api/evaluation_system/requirements.txt
-python Telco-RAG/Telco-RAG_api/evaluation_system/RAGAS_QA_Generation.py
+python Telco-RAG/Telco-RAG_api/evaluation_system/RAGAS_QA_Generation.py \
+  --embeddings Telco-RAG/data/db/embeddings.npy \
+  --meta Telco-RAG/data/db/meta.jsonl \
+  --out Telco-RAG/data/evalsets/ragas_evalset.jsonl \
+  --testset_size 10
+
 python Telco-RAG/Telco-RAG_api/evaluation_system/RAGAS_Evaluation
 
 cd Telco-RAG/Telco-RAG_api
