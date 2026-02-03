@@ -7,6 +7,7 @@ import traceback
 import git
 import asyncio
 import time
+import ujson
 
 folder_url = "https://huggingface.co/datasets/netop/Embeddings3GPP-R18"
 clone_directory = "./3GPP-Release18"
@@ -118,6 +119,16 @@ if __name__ == "__main__":
                 options=None, 
                 model_name='Qwen/Qwen3-30B-A3B-Instruct-2507'
             ))
+            
+            os.makedirs("outputs", exist_ok=True)
+            output_path = os.path.join("outputs", f"response_context_{int(time.time() * 1000)}.json")
+            output = {
+                "query": user_query,
+                "response": response, 
+                "context": context
+            }
+            with open(output_path, "w") as f:
+                ujson.dump(output, f, indent=4)
             
             print("-" * 50)
             print(f"[Response]:\n{response}")
