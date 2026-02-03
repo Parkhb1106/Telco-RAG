@@ -2,7 +2,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install beautifulsoup4 lxml
 pip install requests
-python3 data/web/crawl.py
+python data/web/crawl.py
 
 pip install sentence-transformers
 python data/web/chunking_txt.py
