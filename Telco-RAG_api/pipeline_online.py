@@ -41,7 +41,10 @@ async def TelcoRAG(query, answer= None, options= None, model_name='gpt-4o-mini')
         print()
 
         # question.get_3GPP_context(k=10, model_name=model_name, validate_flag=False) # 근거 문맥을 3GPP 문서에서 뽑아오는 단계
-        question.get_custom_context(k=10, model_name=model_name, validate_flag=False) # 근거 문맥을 3GPP 문서에서 뽑아오는 단계
+        semantic_search = question.get_custom_context(k=10, model_name=model_name, validate_flag=False)
+        keyword_search = question.get_custom_context_keyword(k=10)
+        question.fusion_context(semantic_search, keyword_search)
+        
         '''loop = asyncio.get_event_loop()
         context_3gpp_future = loop.run_in_executor(None, question.get_custom_context, 10, model_name, False, False)
         online_info = await question.get_online_context(model_name=model_name, validator_flag=False)

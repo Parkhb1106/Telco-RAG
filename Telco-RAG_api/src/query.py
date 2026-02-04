@@ -3,6 +3,8 @@ import json
 import numpy as np
 import torch
 import traceback
+import re
+import heapq
 from tqdm.auto import tqdm
 from torch.utils.data import DataLoader, TensorDataset
 from src.retrieval import find_nearest_neighbors_faiss
@@ -177,6 +179,60 @@ class Query:
         else:  
             self.get_question_context_faiss(batch=embedded_docs, k=k, use_context=True)
           
+    def get_custom_context_keyword(self, k=10):
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        meta_path = os.path.join(base_dir, "data", "db", "meta.jsonl")
+
+        tokens = re.findall(r"[A-Za-z0-9]+(?:\\.[A-Za-z0-9]+)*", self.query.lower())
+        stopwords = {
+            "the", "a", "an", "and", "or", "to", "of", "in", "on", "for", "with", "by",
+            "is", "are", "was", "were", "be", "as", "at", "from", "that", "this", "these",
+            "those", "it", "its", "into", "about", "what", "which", "who", "whom", "where",
+            "when", "why", "how", "can", "could", "should", "would", "may", "might", "will",
+            "shall", "do", "does", "did", "not", "no", "yes", "if", "than", "then", "such",
+        }
+        keywords = [t for t in tokens if t not in stopwords]
+        if not keywords:
+            keywords = tokens
+
+        matches = []
+        doc_index = 0
+        with open(meta_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    item = json.loads(line)
+                except Exception:
+                    continue
+                items = item if isinstance(item, list) else [item]
+                for m in items:
+                    text = m.get("text") or ""
+                    if not text:
+                        doc_index += 1
+                        continue
+                    text_lower = text.lower()
+                    score = 0
+                    for kw in keywords:
+                        if kw in text_lower:
+                            score += text_lower.count(kw)
+                    if score > 0:
+                        matches.append((score, doc_index, text, m.get("source")))
+                    doc_index += 1
+
+        if not matches:
+            self.context = "No keyword matches found in custom documents."
+            self.context_source = []
+            return
+
+        top = heapq.nlargest(k, matches, key=lambda x: x[0])
+        self.context = [
+            f"\nRetrieval {i+1}:\n...{text}...\nThis retrieval is performed from the document {source}.\n"
+            for i, (_, _, text, source) in enumerate(top)
+        ]
+        self.context_source = [f"Index: {idx}, Source: {source}" for _, idx, _, source in top]
+        return self.context
   
     def get_custom_context(self, k=10, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
         embedded_docs = get_embeddings_custom()
@@ -185,7 +241,9 @@ class Query:
             self.validate_context(model_name=model_name, k=k, UI_flag=UI_flag)
         else:  
             self.get_question_context_faiss(batch=embedded_docs, k=k, use_context=True)
+        return self.context
 
+    def fusion(semantic_search, keyword_search, ...):
 
     async def get_online_context(self, model_name='gpt-4o-mini', validator_flag= True, options=None):
         if options is None:

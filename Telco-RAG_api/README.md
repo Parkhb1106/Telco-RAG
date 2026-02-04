@@ -31,7 +31,13 @@ python Telco-RAG/Telco-RAG_api/pipeline_online.py --query "$QUERY" --options "$O
 cd Telco-RAG/Telco-RAG_api
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
 python evaluation_system/mcq_evaluation.py \
- -- dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/MCQ_gpt.json
+ --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/MCQ_gpt.json
+
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/mcq_evaluation.py \
+ --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/MCQ_gemini.json
+
 
 cd Telco-RAG/Telco-RAG_api
 export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx
