@@ -84,8 +84,25 @@ def parse_gold_index(example: Dict[str, Any], num_options: int) -> Optional[int]
     ans = example.get("answer", None)
     if isinstance(ans, int):
         if 0 <= ans < num_options:
-            return ans
+            return ans + 1
         return None
+    if isinstance(ans, str):
+        m = ANSWER_OPT_RE.search(ans)
+        if m:
+            try:
+                idx = int(m.group(1))
+                if 1 <= idx <= num_options:
+                    return idx
+            except ValueError:
+                return None
+        nums = re.findall(r"\b(\d+)\b", ans)
+        for s in reversed(nums):
+            try:
+                idx = int(s)
+                if 1 <= idx <= num_options:
+                    return idx
+            except ValueError:
+                continue
     return None
 
 def parse_pred_index(model_text: str, max_opt: int) -> Optional[int]:
