@@ -21,15 +21,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import time
 import asyncio
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from datasets import load_dataset  # pip install datasets
 from tqdm import tqdm  # pip install tqdm
 
 try:
@@ -38,7 +37,7 @@ try:
 except Exception as e:
     raise RuntimeError(
         "Failed to import TelcoRAG from pipeline_offline.py. "
-        "Make sure run_teleqna_mcq.py is executed where pipeline_offline.py is importable."
+        "Make sure mcq_evaluation.py is executed where pipeline_offline.py is importable."
     ) from e
 
 
@@ -57,24 +56,35 @@ def extract_options(example: Dict[str, Any]) -> Tuple[Dict[str, str], List[str]]
       options_dict = {"option 1": "...", "option 2": "...", ...}
       option_keys_sorted = ["option 1", "option 2", ...]
     """
-    # Primary schema (your screenshot)
-    if "options" in example and isinstance(example["options"], list) and len(example["options"]) > 0:
-        choices = example["options"]
-        options_dict = {f"option {i+1}": str(t) for i, t in enumerate(choices)}
+    opts = example.get("options")
+    # List schema
+    if isinstance(opts, list) and len(opts) > 0:
+        options_dict = {f"option {i+1}": str(t) for i, t in enumerate(opts)}
         option_keys_sorted = list(options_dict.keys())
+        return options_dict, option_keys_sorted
+
+    # Dict schema (already "option N": text)
+    if isinstance(opts, dict) and len(opts) > 0:
+        normalized = {str(k).strip(): str(v) for k, v in opts.items()}
+        def sort_key(k: str) -> Tuple[int, str]:
+            m = OPTION_KEY_RE.match(k.strip())
+            if m:
+                return (0, int(m.group(1)))
+            return (1, k.lower())
+        option_keys_sorted = sorted(normalized.keys(), key=sort_key)
+        options_dict = {k: normalized[k] for k in option_keys_sorted}
         return options_dict, option_keys_sorted
     
     raise ValueError(f"No choices/options found. Available keys: {list(example.keys())[:50]}")
 
 def parse_gold_index(example: Dict[str, Any], num_options: int) -> Optional[int]:
     """
-    TeleQnA schema: answer is int64, 0-based index.
     Convert to 1-based option index to match "option N".
     """
     ans = example.get("answer", None)
     if isinstance(ans, int):
         if 0 <= ans < num_options:
-            return ans + 1
+            return ans
         return None
     return None
 
@@ -132,8 +142,8 @@ def safe_div(a: int, b: int) -> float:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset", default="netop/TeleQnA", help="HF dataset name (default: netop/TeleQnA)")
-    ap.add_argument("--split", default="test", help="HF split (TeleQnA commonly exposes 'train')")
+    default_dataset_path = Path(__file__).resolve().parent / "inputs" / "MCQ.json"
+    ap.add_argument("--dataset", default=str(default_dataset_path), help="Local MCQ.json path")
     ap.add_argument("--limit", type=int, default=0, help="Limit number of questions (0 = all)")
     ap.add_argument("--shuffle", action="store_true", help="Shuffle before slicing limit")
     ap.add_argument("--seed", type=int, default=42, help="Seed for shuffle")
@@ -147,29 +157,26 @@ def main() -> None:
     details_path = out_dir / "mcq_details.jsonl"
     summary_path = out_dir / "mcq_summary.json"
 
-    # Hugging Face auth (needed if dataset is gated)
-    # Prefer env var HF_TOKEN; also HUGGINGFACEHUB_API_TOKEN is common.
-    hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACEHUB_API_TOKEN")
-
-    # Load dataset
-    try:
-        ds = load_dataset(args.dataset, split=args.split, token=hf_token)
-    except TypeError:
-        # older datasets lib might not support 'token='; fall back
-        ds = load_dataset(args.dataset, split=args.split, use_auth_token=hf_token)
+    # Load local dataset (JSON list of examples)
+    dataset_path = Path(args.dataset)
+    with dataset_path.open("r", encoding="utf-8") as f_in:
+        ds = json.load(f_in)
+    if not isinstance(ds, list):
+        raise ValueError(f"Expected list in {dataset_path}, got {type(ds).__name__}")
 
     if args.shuffle:
-        ds = ds.shuffle(seed=args.seed)
+        rng = random.Random(args.seed)
+        rng.shuffle(ds)
 
     if args.limit and args.limit > 0:
-        ds = ds.select(range(min(args.limit, len(ds))))
+        ds = ds[: min(args.limit, len(ds))]
 
     overall = Counters()
     by_subject: Dict[str, Counters] = {}
 
     started = time.time()
     with details_path.open("w", encoding="utf-8") as f_out:
-        for i, ex in enumerate(tqdm(ds, desc="TeleQnA MCQ", total=len(ds))):
+        for i, ex in enumerate(tqdm(ds, desc="MCQ", total=len(ds))):
             # TeleQnA uses lower-case keys in example shown on dataset card :contentReference[oaicite:3]{index=3}
             q = ex.get("question")
             if not isinstance(q, str) or not q.strip():
@@ -231,7 +238,7 @@ def main() -> None:
                 "context": context,
                 "error": err,
             }
-            f_out.write(json.dumps(row, ensure_ascii=False) + "\n")
+            f_out.write(json.dumps(row, ensure_ascii=False, indent=4) + "\n")
 
             if args.sleep > 0:
                 time.sleep(args.sleep)
@@ -239,7 +246,6 @@ def main() -> None:
     elapsed = time.time() - started
     summary = {
         "dataset": args.dataset,
-        "split": args.split,
         "model_name": args.model_name,
         "n_evaluated": overall.total,
         "accuracy": safe_div(overall.correct, overall.total),

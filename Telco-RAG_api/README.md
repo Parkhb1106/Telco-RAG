@@ -29,6 +29,13 @@ export OPTIONS='{"option 1: Direct connection of 3GPP access to 5GC", "option 2:
 export ANSWER='option 2: Establishment of user-plane resources over EPC'
 python Telco-RAG/Telco-RAG_api/pipeline_online.py --query "$QUERY" --options "$OPTIONS" --answer "$ANSWER"
 
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/mcq_evaluation.py
+
+
+
+
 
 python Telco-RAG/Telco-RAG_api/evaluation_system/RAGAS_QA_Generation.py \
   --embeddings Telco-RAG/data/db/embeddings.npy \
