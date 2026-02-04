@@ -1,0 +1,542 @@
+[
+   {
+      "question": "5G NAS introduces new concepts absent in LTE. For example, during a 5G standalone Registration procedure, the UE can indicate desired network slices. How is network slice selection handled in the 5GS Registration, and how does this differ from the EPS Attach procedure?",
+      "options": {
+         "option 1": "Slices are chosen by the UE after registration, no signaling needed during Registration",
+         "option 2": "The UE includes requested slice identifiers (S-NSSAIs) in the Registration Request, and the network responds with allowed or rejected slices in the Registration Accept, unlike LTE which has no slice concept in Attach",
+         "option 3": "Slice selection in 5G is done by the RRC layer and is identical to LTE APN selection",
+         "option 4": "The network assigns a random slice to the UE during Registration, similar to default EPS bearer assignment in LTE"
+      },
+      "answer": "option 2: The UE includes requested slice identifiers (S-NSSAIs) in the Registration Request, and the network responds with allowed or rejected slices in the Registration Accept, unlike LTE which has no slice concept in Attach",
+      "explanation": "In 5G Standalone (5GS), the UE can request specific network slices by including S-NSSAI values in the Registration Request. The AMF will indicate which slices are allowed, partially allowed, or rejected in the Registration Accept. LTE’s EPS Attach had no concept of network slicing, so this slice negotiation is new to 5GS NAS.",
+      "category": "5gs_nas_spec"
+   },
+   {
+      "question": "In 5GS NAS, there is no dedicated \"Tracking Area Update\" message as in LTE. If a 5G UE moves to a new area or periodically needs to update the network, which NAS procedure does it use and how is this indicated within the Registration messages?",
+      "options": {
+         "option 1": "The UE sends a Tracking Area Update message in 5G just like in LTE, with no changes",
+         "option 2": "The UE performs a fresh Initial Registration from scratch every time it moves to a new area",
+         "option 3": "The UE uses the Registration Request with a Registration Type indicating a Mobility or Periodic update, which serves the same purpose as a TAU in LTE",
+         "option 4": "5G does not require any update when moving to a new area; the UE remains registered until it deregisters"
+      },
+      "answer": "option 3: The UE uses the Registration Request with a Registration Type indicating a Mobility or Periodic update, which serves the same purpose as a TAU in LTE",
+      "explanation": "5GS simplifies procedures by using the Registration Request for both initial and update scenarios. When a UE needs to update its location (e.g., entering a new tracking area or periodic update), it sends a Registration Request with the Registration Type set appropriately (such as \"mobility update\" or \"periodic update\"). This consolidates the function of LTE’s Tracking Area Update into the 5G Registration procedure.",
+      "category": "5gs_nas_spec"
+   },
+   {
+      "question": "Unlike LTE, 5G allows the UE to register without immediately establishing a data session. How is the default data connectivity handled differently in a 5G Registration compared to an LTE Attach?",
+      "options": {
+         "option 1": "In 5G, the network always establishes a default PDU Session during Registration exactly like LTE establishes a default EPS bearer",
+         "option 2": "5G decouples registration from session setup: the UE may complete Registration without any PDU session, unless it requests one, whereas LTE Attach automatically set up a default bearer for data",
+         "option 3": "Both 5G and LTE delay data session setup until the first user data is sent, with no bearer or PDU session at attach/registration",
+         "option 4": "LTE had no default bearer on attach, and 5G introduced the concept of automatically setting one up during Registration"
+      },
+      "answer": "option 2: 5G decouples registration from session setup: the UE may complete Registration without any PDU session, unless it requests one, whereas LTE Attach automatically set up a default bearer for data",
+      "explanation": "In LTE, the Attach procedure inherently establishes a default EPS bearer for data (usually for internet APN) upon success. In 5G, by contrast, the registration (Registration Accept) does not automatically create a PDU Session unless the UE explicitly requested one during the procedure. This means a 5G UE can register with the network and only later initiate a PDU Session establishment for data, offering more flexibility.",
+      "category": "5gs_nas_spec"
+   },
+   {
+      "question": "For an LTE device that requires circuit-switched voice fallback, what type of attach does it perform in the EPS NAS, and what additional registration occurs compared to a normal EPS attach?",
+      "options": {
+         "option 1": "It performs a data-only EPS Attach, with no additional registrations",
+         "option 2": "It performs an EPS Emergency Attach, which also registers the UE for voice",
+         "option 3": "It performs a Combined EPS/IMSI Attach, which simultaneously attaches the UE to LTE’s packet domain and registers it in the CS domain (e.g., 3G network) for voice services",
+         "option 4": "It sends a second attach request to a 3G network after completing a normal EPS attach"
+      },
+      "answer": "option 3: It performs a Combined EPS/IMSI Attach, which simultaneously attaches the UE to LTE’s packet domain and registers it in the CS domain (e.g., 3G network) for voice services",
+      "explanation": "When an LTE UE needs voice service via CS fallback (because VoLTE isn’t used), it uses a Combined EPS/IMSI Attach. In the Attach Request, the UE indicates this combined attach type. The MME then performs both the EPS attach and triggers a registration on the circuit-switched network (e.g., providing the VLR with the user’s location). This way, the UE is attached for LTE data and simultaneously registered for CS voice.",
+      "category": "eps_nas_spec"
+   },
+   {
+      "question": "LTE’s NAS includes a procedure for periodic location updates. Under what circumstances does an LTE UE initiate a Tracking Area Update (TAU), and what are the types of TAU that can occur?",
+      "options": {
+         "option 1": "Only when the UE’s battery is low, it initiates a TAU to save power",
+         "option 2": "When the UE moves into a new tracking area not in its current TA list or when a periodic timer expires, it sends a Tracking Area Update Request. TAUs can be 'normal' (movement-based), 'periodic', or 'combined' if updating CS domain as well",
+         "option 3": "TAU happens at every RRC reconnection and there is only one type of TAU",
+         "option 4": "The UE never initiates TAU on its own; it’s always network commanded"
+      },
+      "answer": "option 2: When the UE moves into a new tracking area not in its current TA list or when a periodic timer expires, it sends a Tracking Area Update Request. TAUs can be 'normal' (movement-based), 'periodic', or 'combined' if updating CS domain as well",
+      "explanation": "In LTE, the UE is configured with a list of Tracking Areas. If it detects that it has entered an area not in the allowed list (a new TA), it triggers a \"normal\" Tracking Area Update to inform the network of its new location. Additionally, the UE has a periodic update timer; when it expires, a \"periodic\" TAU is sent to refresh the registration. If the UE is also registered for CS services (combined attach), the TAU can be combined with a location update for the CS domain (combined TAU).",
+      "category": "eps_nas_spec"
+   },
+   {
+      "question": "What is an EPS Emergency Attach and when would a UE use this procedure in LTE networks?",
+      "options": {
+         "option 1": "It’s a special attach where the UE without valid subscription attaches solely to request emergency services, allowed even if normal attach is not permitted",
+         "option 2": "It is the same as a normal attach, but with higher priority tagging for emergency",
+         "option 3": "It refers to the attach that UEs do when they camp on a femtocell or home eNodeB",
+         "option 4": "There is no separate emergency attach defined in LTE"
+      },
+      "answer": "option 1: It’s a special attach where the UE without valid subscription attaches solely to request emergency services, allowed even if normal attach is not permitted",
+      "explanation": "EPS Emergency Attach is a procedure defined for scenarios where a UE may need to access emergency services without having normal service (for example, no SIM or barred SIM for normal use). In this procedure, the UE indicates an emergency attach type. The network, if configured to allow emergency bearer services, will accept the attach and only permit emergency calls. It differs from a normal attach in that it doesn’t provide regular service or PDN connectivity beyond emergency services.",
+      "category": "eps_nas_spec"
+   },
+   {
+      "question": "During the initial attach in LTE, after the eNodeB sends an RRC Connection Setup to the UE, what response does the UE send to complete the RRC connection establishment, and what critical information does that response carry?",
+      "options": {
+         "option 1": "UE sends an RRC Connection Complete message with no additional information",
+         "option 2": "UE sends an RRC Connection Setup Complete, which includes a NAS Attach Request (carried within) to begin the core network attach process",
+         "option 3": "UE sends an RRC Connection Reconfiguration Complete containing default bearer info",
+         "option 4": "No response is needed from UE; the RRC connection is considered complete after eNodeB’s message"
+      },
+      "answer": "option 2: UE sends an RRC Connection Setup Complete, which includes a NAS Attach Request (carried within) to begin the core network attach process",
+      "explanation": "In LTE, the sequence of RRC connection establishment involves the UE sending RRC Connection Request, the eNodeB replying with RRC Connection Setup, and then the UE responding with RRC Connection Setup Complete. The RRC Connection Setup Complete message contains a dedicated NAS payload (e.g., the Attach Request for EPS) to kick off the NAS procedures. This piggybacking is crucial: it means that as soon as the RRC layer is up, the UE can start the attach to the EPC within the same message.",
+      "category": "lte_rrc_spec"
+   },
+   {
+      "question": "Which RRC message does an LTE network use to command a handover to a new cell, and what does the UE do immediately after acting on this message?",
+      "options": {
+         "option 1": "The network uses an RRC Connection Reconfiguration message with mobility control information; the UE applies the new cell config (tuning to target cell) and then sends an RRC Connection Reconfiguration Complete after moving",
+         "option 2": "The network uses a special Handover Command message; the UE acknowledges with a Handover Complete",
+         "option 3": "The network releases the UE to idle and expects it to reattach to the new cell on its own",
+         "option 4": "Handover in LTE is handled entirely at the NAS layer, not using RRC messages"
+      },
+      "answer": "option 1: The network uses an RRC Connection Reconfiguration message with mobility control information; the UE applies the new cell config (tuning to target cell) and then sends an RRC Connection Reconfiguration Complete after moving",
+      "explanation": "In LTE, a handover is initiated by the source eNodeB sending an RRC Connection Reconfiguration message that includes mobilityControlInformation (the details for the target cell). Upon receiving this, the UE quickly switches to the target cell’s radio parameters (frequencies, etc.), and once synchronized and connected to the target, the UE sends an RRC Connection Reconfiguration Complete to the target eNodeB. This completes the handover procedure at the RRC layer.",
+      "category": "lte_rrc_spec"
+   },
+   {
+      "question": "When an LTE network releases a UE’s RRC connection, how can it direct the UE to a specific carrier or RAT for re-selection, and in which message is this information provided?",
+      "options": {
+         "option 1": "The eNodeB cannot influence what the UE does after RRC release; the UE always just goes idle on the same LTE carrier",
+         "option 2": "The eNodeB includes redirection information (frequency, RAT) in the RRC Connection Release message, guiding the UE to reselect to a target frequency/RAT after going idle",
+         "option 3": "The eNodeB sends a separate Redirect message after RRC release",
+         "option 4": "The UE is instructed via NAS to switch RATs, not via RRC"
+      },
+      "answer": "option 2: The eNodeB includes redirection information (frequency, RAT) in the RRC Connection Release message, guiding the UE to reselect to a target frequency/RAT after going idle",
+      "explanation": "LTE’s RRC Connection Release message may carry an optional field for redirection. If the network wants the UE to move to another frequency or RAT (for example, an LTE carrier on another band, or to WCDMA/GSM), it provides the target frequency and radio access technology in the release message. The UE, upon receiving the release, goes to RRC_IDLE and then uses the provided info to immediately search and reselect to the specified target, rather than randomly camping on the old frequency.",
+      "category": "lte_rrc_spec"
+   },
+   {
+      "question": "In 5G NR, one frame is 10 ms like in LTE, but the number of slots per frame depends on the subcarrier spacing (SCS). If an NR cell uses 60 kHz SCS, approximately how many slots are there in a 10 ms frame and how long is each slot?",
+      "options": {
+         "option 1": "There would still be 10 slots per 10 ms frame, each slot 1 ms long, regardless of SCS",
+         "option 2": "At 60 kHz SCS (which is 4 times the 15 kHz base), there are 40 slots in 10 ms (4 slots per ms), so each slot is 0.25 ms long",
+         "option 3": "60 kHz SCS gives 20 slots per frame, each 0.5 ms, similar to LTE’s half subframe",
+         "option 4": "60 kHz SCS is used only in uplink and does not affect slot timing"
+      },
+      "answer": "option 2: At 60 kHz SCS (which is 4 times the 15 kHz base), there are 40 slots in 10 ms (4 slots per ms), so each slot is 0.25 ms long",
+      "explanation": "NR’s slot duration shrinks as subcarrier spacing increases. The relationship is that doubling SCS doubles the number of slots per frame (since each slot is half the length). 15 kHz corresponds to 10 slots in 10 ms (1 ms each). 30 kHz → 20 slots (0.5 ms each). 60 kHz → 40 slots per frame, meaning each slot is 0.25 ms. This adaptability of slot length is a key difference from LTE’s fixed 0.5 ms slots, allowing NR to support lower latency with higher SCS.",
+      "category": "nr_phy_frame"
+   },
+   {
+      "question": "Regardless of subcarrier spacing, how many OFDM symbols are in a normal CP (Cyclic Prefix) slot in NR, and what is the effect of increasing subcarrier spacing on slot duration?",
+      "options": {
+         "option 1": "NR slots can have a variable number of OFDM symbols depending on SCS",
+         "option 2": "A standard NR slot contains 14 OFDM symbols (normal CP), just like LTE, and as SCS increases (spacing wider), the slot duration becomes shorter in time",
+         "option 3": "There are 12 symbols in an NR slot, matching the number of subcarriers per RB",
+         "option 4": "NR uses 14 symbols for low frequencies and 12 for high frequencies in a slot"
+      },
+      "answer": "option 2: A standard NR slot contains 14 OFDM symbols (normal CP), just like LTE, and as SCS increases (spacing wider), the slot duration becomes shorter in time",
+      "explanation": "For normal cyclic prefix, an NR slot always has 14 OFDM symbols, mirroring LTE’s basic structure. However, unlike LTE (where the subcarrier spacing was fixed at 15 kHz), NR can use various SCS values. When SCS increases, each OFDM symbol (and thus the whole slot of 14 symbols) occupies less time. This means higher SCS yields shorter slots and more slots per frame, enabling lower latency transmission.",
+      "category": "nr_phy_frame"
+   },
+   {
+      "question": "5G NR introduced the concept of a \"mini-slot\" or partial slot transmission. What is a mini-slot and how does it improve latency compared to the fixed slot scheduling of LTE?",
+      "options": {
+         "option 1": "A mini-slot is just another term for a normal slot in NR",
+         "option 2": "A mini-slot is a short transmission (2, 4, or 7 OFDM symbols long) that can start at any time, allowing urgent data to be sent without waiting for the next full slot boundary, thereby reducing latency",
+         "option 3": "Mini-slots are only used for system information broadcast in NR and have no impact on latency",
+         "option 4": "A mini-slot in NR is an LTE slot reused within a 5G frame for backward compatibility"
+      },
+      "answer": "option 2: A mini-slot is a short transmission (2, 4, or 7 OFDM symbols long) that can start at any time, allowing urgent data to be sent without waiting for the next full slot boundary, thereby reducing latency",
+      "explanation": "NR permits transmissions that don’t occupy a full slot duration, known as mini-slots (e.g., 2, 4, or 7 symbols). These can be scheduled asynchronously relative to the regular slot timing. This flexibility means, for example, an URLLC packet can be sent as soon as resources are available, without having to align strictly to a 1 ms boundary as in LTE. The result is lower latency for short, urgent transmissions compared to LTE’s fixed 1 ms TTI.",
+      "category": "nr_phy_frame"
+   },
+   {
+      "question": "5G NR supports both contention-based and contention-free (dedicated) random access. If a UE is handed over to a target cell and receives a handover command with an assigned RACH preamble, what type of random access does it perform and why?",
+      "options": {
+         "option 1": "It performs a contention-based RA, because all RACH procedures in NR are contention-based",
+         "option 2": "It performs a contention-free RA, using the dedicated preamble provided by the network, ensuring no collision with other UEs during handover",
+         "option 3": "It will not run a random access at all during handover in NR",
+         "option 4": "It uses contention-based RA but with a priority bit set for handover cases"
+      },
+      "answer": "option 2: It performs a contention-free RA, using the dedicated preamble provided by the network, ensuring no collision with other UEs during handover",
+      "explanation": "During handover (or other scenarios like on request by network), the network can provide the UE with a specific RACH preamble to use. In this case, the UE’s random access is contention-free (also called dedicated RA) because only that UE will use the assigned preamble. This avoids collisions and speeds up access, which is critical during time-sensitive handovers. Contention-based RA, on the other hand, is used for normal initial access where preambles are randomly chosen and collisions can be resolved by contention resolution.",
+      "category": "nr_rach"
+   },
+   {
+      "question": "NR Release 16 introduced a 2-step Random Access (MsgA/MsgB) procedure alongside the traditional 4-step RA. What are the key differences between the 2-step RA and 4-step RA, and in what situations is the 2-step RA beneficial?",
+      "options": {
+         "option 1": "There is no difference; 2-step RA is simply the first two steps of the 4-step RA repeated twice",
+         "option 2": "In 4-step RA, the UE sends a preamble then waits for a Random Access Response, followed by a scheduled RRC message and a contention resolution. In 2-step RA, the UE sends a preamble with its data in one go (MsgA) and the gNB responds with a combined RAR + contention resolution (MsgB). The 2-step procedure reduces latency and is beneficial for scenarios like URLLC or light payload access",
+         "option 3": "2-step RA uses two different preambles instead of one, to speed up detection",
+         "option 4": "4-step RA is for initial access and 2-step is only for handover"
+      },
+      "answer": "option 2: In 4-step RA, the UE sends a preamble then waits for a Random Access Response, followed by a scheduled RRC message and a contention resolution. In 2-step RA, the UE sends a preamble with its data in one go (MsgA) and the gNB responds with a combined RAR + contention resolution (MsgB). The 2-step procedure reduces latency and is beneficial for scenarios like URLLC or light payload access",
+      "explanation": "The traditional RA has four steps: (1) UE transmits a PRACH preamble (Msg1); (2) gNB replies with a Random Access Response (Msg2); (3) UE sends an RRC or NAS message (Msg3); (4) gNB sends contention resolution (Msg4). The 2-step RA condenses this: the UE sends a PRACH preamble *with* an uplink payload piggybacked (MsgA), and the gNB’s response (MsgB) includes both the grant and the contention resolution. This reduces the round-trip exchanges, cutting access latency. It’s particularly useful for scenarios requiring very fast access or when the data to send is small (like URLLC packets or some uplink reports).",
+      "category": "nr_rach"
+   },
+   {
+      "question": "In a contention-based random access scenario in NR, if two UEs transmit the same RACH preamble at the same time, how is the contention resolved by the network?",
+      "options": {
+         "option 1": "The gNB will detect the collision and immediately assign a different PRACH to one of the UEs",
+         "option 2": "Both UEs will get the Random Access Response, but they then transmit their own unique identity in the Msg3. The gNB’s contention resolution message (Msg4) echoes one UE’s identity (e.g., temporary C-RNTI or NAS identifier). Only the UE whose identity matches in Msg4 continues, while the other UE, not seeing its identifier, knows its attempt failed and backs off",
+         "option 3": "NR doesn’t allow two UEs to pick the same preamble; each preamble is scheduled to only one UE",
+         "option 4": "The UE with higher priority (like a special QoS) will automatically win and the other is forced to drop"
+      },
+      "answer": "option 2: Both UEs will get the Random Access Response, but they then transmit their own unique identity in the Msg3. The gNB’s contention resolution message (Msg4) echoes one UE’s identity (e.g., temporary C-RNTI or NAS identifier). Only the UE whose identity matches in Msg4 continues, while the other UE, not seeing its identifier, knows its attempt failed and backs off",
+      "explanation": "In contention-based RA, collisions can happen. When two UEs pick the same preamble, the gNB typically cannot differentiate and will send a Random Access Response that potentially grants both. Both UEs then proceed to send their next message (which contains some identifier, like a temporary CRNTI or UE ID). The gNB only needs one of those to go through correctly. In the final step (contention resolution), the gNB addresses the resolution message to the identifier of the successful UE. The losing UE, not seeing its ID in the resolution, realizes the contention loss and will retry after a backoff. This is how contention is resolved implicitly.",
+      "category": "nr_rach"
+   },
+   {
+      "question": "In 5G NR Standalone mode, the initial dedicated configuration for a UE is delivered differently than in LTE. Which RRC message carries the UE’s initial radio bearer and configuration in NR, and how does this compare to the LTE approach?",
+      "options": {
+         "option 1": "NR uses the RRC Connection Setup message just like LTE to provide all initial configs",
+         "option 2": "NR uses an RRC Reconfiguration message (after the minimal RRC Setup) to deliver the main radio bearer configurations, whereas LTE provided initial radio bearer configs in the RRC Connection Setup message followed by reconfigurations later",
+         "option 3": "NR combines the attach accept and RRC setup into one NAS message instead of using RRC messages",
+         "option 4": "There is no difference; both LTE and NR use RRC Connection Reconfiguration for the first dedicated setup"
+      },
+      "answer": "option 2: NR uses an RRC Reconfiguration message (after the minimal RRC Setup) to deliver the main radio bearer configurations, whereas LTE provided initial radio bearer configs in the RRC Connection Setup message followed by reconfigurations later",
+      "explanation": "In LTE, upon connection establishment, the eNodeB sends an RRC Connection Setup, which already contains the basic RadioBearerConfig for SRB1 and possibly default DRB. In NR, the philosophy changed: the gNB first sends a brief RRC Setup (to establish the SRB1), and then immediately follows up with an RRC Reconfiguration message that carries the detailed configuration for things like data bearers (DRBs), cell group configuration, etc. Essentially, NR moved the heavy configuration to the RRC Reconfiguration phase, using the same RRC message type for initial and later reconfigurations.",
+      "category": "nr_rrc_spec"
+   },
+   {
+      "question": "5G NR introduced an RRC \"resume\" procedure for returning from the RRC_INACTIVE state. What message does the UE send to resume a suspended RRC connection, and how does the network acknowledge it?",
+      "options": {
+         "option 1": "The UE sends an RRCResumeRequest (or RRCResumeRequest1) to the gNB, and the network responds with RRC Resume (or an RRC Reconfiguration to resume), followed by the UE’s RRC Resume Complete",
+         "option 2": "The UE directly goes to RRC_CONNECTED without messaging, using stored context",
+         "option 3": "The UE sends an RRC Connection Request labeled as \"Resume\", and the gNB responds with RRC Connection Setup",
+         "option 4": "Resume is handled at NAS level; the UE sends a NAS message to resume"
+      },
+      "answer": "option 1: The UE sends an RRCResumeRequest (or RRCResumeRequest1) to the gNB, and the network responds with RRC Resume (or an RRC Reconfiguration to resume), followed by the UE’s RRC Resume Complete",
+      "explanation": "When a UE in RRC_INACTIVE wants to resume its RRC connection (for example, it has uplink data or received a paging), it uses a special RRCResumeRequest message (with a short resume identity provided earlier by the gNB). The gNB, upon validating the UE’s context, can resume the connection by sending an RRC Resume message (or it may send an RRC Reconfiguration if additional changes are needed). The UE then sends an RRC Resume Complete. This exchange restores the RRC_CONNECTED state quickly, reusing stored context, unlike a full connection setup from idle.",
+      "category": "nr_rrc_spec"
+   },
+   {
+      "question": "How does a 5G gNB find out the detailed capabilities of a UE (such as supported bands or features) using RRC signaling, and which messages are involved in this exchange?",
+      "options": {
+         "option 1": "The UE capabilities are pre-configured in the SIM and gNB reads them via the core network",
+         "option 2": "The gNB sends an RRC UE Capability Enquiry, specifying which radio access technologies it wants info for (NR, E-UTRA, etc.). The UE then responds with an RRC UE Capability Information message containing its supported features, bands, and other capability details",
+         "option 3": "There is no need for capability exchange in NR because of UE’s NPR broadcast in SIB",
+         "option 4": "The gNB schedules a special MAC CE (control element) where the UE dumps its capabilities"
+      },
+      "answer": "option 2: The gNB sends an RRC UE Capability Enquiry, specifying which radio access technologies it wants info for (NR, E-UTRA, etc.). The UE then responds with an RRC UE Capability Information message containing its supported features, bands, and other capability details",
+      "explanation": "5G NR, like LTE, uses an explicit RRC procedure for capability exchange. When needed (typically early in the connection or when configuring inter-RAT aspects), the gNB issues a UE Capability Enquiry indicating what type of capabilities it’s interested in (for example, NR, and possibly E-UTRA if dual connectivity or handover might be used). The UE compiles its supported bands, radio features (like 256QAM support, MIMO layers, etc.), and other relevant capabilities into a UE Capability Information message and sends it back. This informs the gNB so it can tailor configurations to what the UE supports.",
+      "category": "nr_rrc_spec"
+   },
+   {
+      "question": "In 5G NR, only a minimal set of system information is broadcast regularly. How does a UE obtain additional system information (beyond the MIB and SIB1) and under what conditions is this done, compared to LTE’s always-broadcast SIB model?",
+      "options": {
+         "option 1": "All SIBs in NR are broadcast just like in LTE, at fixed schedules, no UE request needed",
+         "option 2": "NR broadcasts MIB and SIB1. If the UE needs other SIBs (e.g., for camping or a specific service), it must first complete RRC setup (enter connected mode) and then send a SystemInformationRequest to the gNB to retrieve the needed SIB content on-demand",
+         "option 3": "The UE uses NAS signaling to get system info beyond SIB1 in NR",
+         "option 4": "NR never provides more than MIB and SIB1; all other info is pre-configured"
+      },
+      "answer": "option 2: NR broadcasts MIB and SIB1. If the UE needs other SIBs (e.g., for camping or a specific service), it must first complete RRC setup (enter connected mode) and then send a SystemInformationRequest to the gNB to retrieve the needed SIB content on-demand",
+      "explanation": "NR has minimized always-on broadcasts to reduce overhead. Typically, only the MIB (with essential radio info) and SIB1 (with cell access parameters and scheduling info) are broadcast periodically. Additional system information (like SIB2, SIB3, etc., which might include neighboring cell info, etc.) is not broadcast all the time. Instead, if a UE requires it (for example, to evaluate cell reselection criteria or specific services), the UE will establish an RRC connection (if not already in one) and request the information via an RRC SystemInformationRequest message. The gNB then delivers the needed SIBs in a dedicated SystemInformation message. This contrasts with LTE, where many SIBs were periodically broadcast to all UEs.",
+      "category": "nr_sysinfo"
+   },
+   {
+      "question": "What key information is carried in the NR Master Information Block (MIB), and how does it differ from the LTE MIB in terms of content?",
+      "options": {
+         "option 1": "NR’s MIB contains the same information as LTE’s MIB (DL bandwidth, system frame number, and PHICH config)",
+         "option 2": "NR’s MIB provides the basics needed to decode SSB and initial control: it includes the system frame number, subcarrier spacing for the broadcasting channels (SS/PBCH), and a pointer for SIB1 scheduling (and also a cell barring flag). LTE’s MIB included things like system bandwidth and PHICH configuration, which are not present in NR MIB",
+         "option 3": "NR MIB mainly carries the cell’s GNB ID and nothing else",
+         "option 4": "The MIB concept is not used in 5G; all system info is in SIB1"
+      },
+      "answer": "option 2: NR’s MIB provides the basics needed to decode SSB and initial control: it includes the system frame number, subcarrier spacing for the broadcasting channels (SS/PBCH), and a pointer for SIB1 scheduling (and also a cell barring flag). LTE’s MIB included things like system bandwidth and PHICH configuration, which are not present in NR MIB",
+      "explanation": "The NR MIB is leaner and focuses on what’s essential for initial access. It carries the timing info (part of SFN), the DL SSB subcarrier spacing, and information to help find SIB1 (such as the pattern of SSB transmission and system information scheduling info), along with flags like cellBarred. In LTE, the MIB contained the DL bandwidth indication and PHICH configuration (related to uplink HARQ), which aren’t needed in NR. NR’s design moved many network parameters out of always-on broadcast, so those items are omitted or handled differently (e.g., no PHICH in NR at all).",
+      "category": "nr_sysinfo"
+   },
+   {
+      "question": "How does the NR UE know when and where to find SIB1, given that SIB1 is not transmitted in the same way as LTE, and what role does the MIB and scheduling information play in this?",
+      "options": {
+         "option 1": "SIB1 is still carried on the broadcast channel in every frame just like LTE, so the UE just reads it after the MIB",
+         "option 2": "The NR MIB (via the PBCH) provides scheduling info for SIB1 (in a specific CORESET/SS) such as the periodicity and offset. The UE uses that info to look for the PDSCH (system info) carrying SIB1 at the correct time/frequency indicated. In other words, the MIB guides the UE where SIB1 will be located",
+         "option 3": "The UE blindly decodes every possible control channel to find SIB1",
+         "option 4": "NR doesn’t have SIB1 at all; the info is in MIB"
+      },
+      "answer": "option 2: The NR MIB (via the PBCH) provides scheduling info for SIB1 (in a specific CORESET/SS) such as the periodicity and offset. The UE uses that info to look for the PDSCH (system info) carrying SIB1 at the correct time/frequency indicated. In other words, the MIB guides the UE where SIB1 will be located",
+      "explanation": "In NR, SIB1 is delivered in a scheduled manner on the DL-SCH (like a normal data channel), not continuously on a fixed channel as in LTE. The MIB contains bits that tell the UE how SIB1 is scheduled – specifically, it indicates the periodicity and subframe where SIB1 will be, as well as the control resource (CORESET/Search Space) that carries the PDCCH for SIB1. Thus, after reading the MIB from the PBCH, the UE knows when and where to decode the PDCCH (with SI-RNTI) to get SIB1 on the PDSCH. This approach lets NR avoid broadcasting SIB1 too frequently, yet ensures UEs can find it quickly based on MIB instructions.",
+      "category": "nr_sysinfo"
+   },
+   {
+      "question": "During initial cell search in a mmWave 5G cell (FR2), the gNB uses beam sweeping with SS Blocks. What is the maximum number of SS Block beams that might be transmitted, and how does the UE use them to achieve initial access?",
+      "options": {
+         "option 1": "FR2 cells transmit at most 8 SS Block beams; the UE combines all of them for synchronization",
+         "option 2": "Up to 64 SS Blocks (beamformed) can be sent in a burst in FR2. The UE scans through the SS blocks, measuring PSS/SSS and the PBCH in each, then selects the beam (SSB) with the strongest signal to synchronize and derive system info before proceeding with random access on that beam",
+         "option 3": "The gNB transmits one omnidirectional SS Block in FR2; beams are not used at initial access",
+         "option 4": "The UE uses GPS assistance instead of SS Blocks to find the right beam"
+      },
+      "answer": "option 2: Up to 64 SS Blocks (beamformed) can be sent in a burst in FR2. The UE scans through the SS blocks, measuring PSS/SSS and the PBCH in each, then selects the beam (SSB) with the strongest signal to synchronize and derive system info before proceeding with random access on that beam",
+      "explanation": "In high-frequency (mmWave) NR deployments, the base station (gNB) cannot cover the cell with a single wide beam, so it transmits multiple SS Blocks (each containing synchronization signals PSS/SSS and PBCH) across different beam directions in what’s called an SSB burst set. In FR2, up to 64 such beams can be used. The UE will sweep through these beams, measure their signal quality, and lock onto the best one (strongest SSB). Once it has decoded the PBCH (getting MIB, etc.) from that best beam, the UE knows the timing and can proceed with random access on the identified beam, ensuring initial access alignment.",
+      "category": "nr_phy_beam"
+   },
+   {
+      "question": "5G NR must maintain beam alignment during an ongoing connection. If the UE’s current downlink beam becomes weak (beam failure), what procedure does the UE initiate to recover, and what signals are involved?",
+      "options": {
+         "option 1": "The UE does nothing until it drops the connection entirely, then reconnects from scratch",
+         "option 2": "The UE initiates a Beam Failure Recovery procedure: it selects a new candidate beam (often by monitoring periodically transmitted SSBs or CSI-RS for potential beams) and then uses a special RACH preamble (with a Beam Failure Recovery RNTI) on that beam to notify the gNB and re-establish alignment",
+         "option 3": "The UE sends a handover request to the gNB over the current beam",
+         "option 4": "Beam alignment is maintained by physical beam-steering only and involves no protocol procedure"
+      },
+      "answer": "option 2: The UE initiates a Beam Failure Recovery procedure: it selects a new candidate beam (often by monitoring periodically transmitted SSBs or CSI-RS for potential beams) and then uses a special RACH preamble (with a Beam Failure Recovery RNTI) on that beam to notify the gNB and re-establish alignment",
+      "explanation": "NR has a mechanism to handle beam failures. The UE continuously monitors the quality of the reference signals on the serving beam (this could be SSB or a dedicated CSI-RS designated for beam tracking). If a configured number of consecutive signals are missed (indicating the beam is lost), the UE declares a beam failure. It then searches for a viable new beam (from other SSBs/CSI-RS it was measuring). To switch to the new beam, the UE quickly triggers a beam recovery random access, using a dedicated preamble and a special RNTI that flags it as a beam recovery attempt. The gNB, upon receiving this, can adjust the connection to the new beam without the UE dropping the call. This procedure is much faster than a full re-establishment and keeps the connection alive through beam changes.",
+      "category": "nr_phy_beam"
+   },
+   {
+      "question": "Beam management in NR includes handling of uplink beams as well. How does a gNB measure and adjust for the best uplink beam from a UE, and what reference signal is utilized by the UE for this purpose?",
+      "options": {
+         "option 1": "The gNB assumes uplink beam is always aligned with downlink beam and doesn’t need special measurement",
+         "option 2": "The UE transmits Sounding Reference Signals (SRS) in the uplink. The gNB measures these SRS, which are sent on different antenna beams or sounding occasions, to determine the best uplink transmit beam from the UE. Based on SRS, the gNB can select or request the UE to switch to the optimal uplink beam or adjust its receiver accordingly",
+         "option 3": "For uplink, the UE sends its data and the gNB blindly tries different beamforming weights on the fly",
+         "option 4": "The UE reports its preferred uplink beam in an RRC message instead of the gNB measuring directly"
+      },
+      "answer": "option 2: The UE transmits Sounding Reference Signals (SRS) in the uplink. The gNB measures these SRS, which are sent on different antenna beams or sounding occasions, to determine the best uplink transmit beam from the UE. Based on SRS, the gNB can select or request the UE to switch to the optimal uplink beam or adjust its receiver accordingly",
+      "explanation": "Uplink beam management is achieved via the UE sending Sounding Reference Signals. SRS are uplink reference signals that the UE can transmit periodically or upon request, potentially sweeping through its transmit antenna beams if it has multiple. The gNB listens to these SRS bursts and evaluates the signal quality from each UE on different spatial directions. Using that info, the gNB can infer which uplink beam from the UE is strongest and can either adjust its reception beamforming or instruct the UE to use a particular transmit beam if the UE supports switching. This ensures the uplink stays on a good beam pair, complementing the downlink beam management (which uses SSB/CSI-RS and UE feedback).",
+      "category": "nr_phy_beam"
+   },
+   {
+      "question": "5G NR introduced a new RRC state called RRC_INACTIVE. What is the purpose of the RRC_INACTIVE state, and how does it benefit the UE compared to going directly to RRC_IDLE as in LTE?",
+      "options": {
+         "option 1": "RRC_INACTIVE is just another name for RRC_IDLE in 5G; there’s no difference",
+         "option 2": "RRC_INACTIVE is a state where the UE is not exchanging user data but retains a context (like an RRC resume identity) with the network. This allows the UE to quickly resume to RRC_CONNECTED with minimal signaling. It saves power similar to idle mode, but unlike idle, the UE doesn’t need a full connection setup to transmit again, greatly reducing latency when returning to active state",
+         "option 3": "RRC_INACTIVE means the UE is actively transmitting at lower power",
+         "option 4": "It’s a state used only for NTN (satellite) connections, not for terrestrial 5G"
+      },
+      "answer": "option 2: RRC_INACTIVE is a state where the UE is not exchanging user data but retains a context (like an RRC resume identity) with the network. This allows the UE to quickly resume to RRC_CONNECTED with minimal signaling. It saves power similar to idle mode, but unlike idle, the UE doesn’t need a full connection setup to transmit again, greatly reducing latency when returning to active state",
+      "explanation": "RRC_INACTIVE is a new intermediate state in NR. The UE in this state has released the active radio resources (to save power and free up network capacity) but crucially keeps a logical context with the gNB (e.g., a stored AS context and a \"resume ID\"). The network knows the UE is in Inactive in a certain area (RNA, RAN Notification Area). When data needs to be sent or received, the UE can resume its RRC connection via a lightweight procedure instead of the heavier idle-to-connected transition. This is beneficial for applications with intermittent traffic, as it improves latency and reduces signaling load compared to dropping to idle and reconnecting each time like in LTE.",
+      "category": "nr_rrc"
+   },
+   {
+      "question": "While a UE is in RRC_INACTIVE state, how does the network keep track of the UE’s location for paging, and what is the analogous concept to LTE’s tracking area in this state?",
+      "options": {
+         "option 1": "In RRC_INACTIVE, the network doesn’t track the UE at all until it resumes",
+         "option 2": "The gNB (or NG-RAN) defines a RAN-based Notification Area (RNA) for the UE. The UE updates the network if it moves out of its current RNA (via a lightweight RNA update procedure), similar to how it would send a Tracking Area Update in LTE if it moves out of a core-network TA. This way, the network knows which set of cells (RNA) to page the UE in while it’s inactive",
+         "option 3": "The UE in RRC_INACTIVE uses GPS to report location to the network",
+         "option 4": "Paging isn’t needed in RRC_INACTIVE; the UE stays in constant contact"
+      },
+      "answer": "option 2: The gNB (or NG-RAN) defines a RAN-based Notification Area (RNA) for the UE. The UE updates the network if it moves out of its current RNA (via a lightweight RNA update procedure), similar to how it would send a Tracking Area Update in LTE if it moves out of a core-network TA. This way, the network knows which set of cells (RNA) to page the UE in while it’s inactive",
+      "explanation": "In RRC_INACTIVE, the core network (AMF) has delegated some UE tracking responsibility to the RAN. The gNB (or a set of gNBs) gives the UE an RNA, which is essentially a grouping of cells. As long as the UE stays within that RNA, it doesn’t need to inform the network of movement. If it leaves the RNA, it performs an RNA update (resuming briefly or signaling to update its area) to let the network know its new area. This concept parallels LTE’s Tracking Areas but operates at the RAN level. When the network needs to page an inactive UE (say for downlink data), it will page in the last known RNA, rather than system-wide, thus limiting paging scope and signaling.",
+      "category": "nr_rrc"
+   },
+   {
+      "question": "What procedure does the gNB use to transition a connected UE into RRC_INACTIVE, and what does it provide to the UE to facilitate a quick return to RRC_CONNECTED later?",
+      "options": {
+         "option 1": "There is no special procedure; the UE just falls idle after inactivity",
+         "option 2": "The gNB issues an RRC Release message with a suspendConfig (which includes a resume identity and possibly an RNA identifier). This message moves the UE to RRC_INACTIVE instead of full idle. The suspend configuration provides the UE with the information (like a resume ID) needed to quickly resume the connection later",
+         "option 3": "The network sends a NAS message to suspend the UE",
+         "option 4": "The UE decides on its own to enter inactive and later informs the gNB"
+      },
+      "answer": "option 2: The gNB issues an RRC Release message with a suspendConfig (which includes a resume identity and possibly an RNA identifier). This message moves the UE to RRC_INACTIVE instead of full idle. The suspend configuration provides the UE with the information (like a resume ID) needed to quickly resume the connection later",
+      "explanation": "To put a UE into the RRC_INACTIVE state, the gNB uses the RRC Release message but, importantly, includes a suspendConfig in it. The suspendConfig contains a resumeIdentity (sometimes called an RRC Suspend ID or C-RNTI-based token) that the UE will use when it wants to resume. It may also implicitly tie the UE to an RNA for paging. By doing this, the UE releases the dedicated resources but holds on to the provided ID. Later, if the UE needs to re-connect (or the network pages it), that resumeIdentity is used in the RRC Resume procedure, allowing both sides to quickly re-establish the RRC connection without the full handshake. This is different from LTE, where an RRC Release simply dropped the UE to idle with no stored context.",
+      "category": "nr_rrc"
+   },
+   {
+      "question": "Once an NR UE is in RRC_CONNECTED, suppose it has a new RRC message (like a measurement report) to send. Through which logical, transport, and physical channels will this RRC message travel in the uplink?",
+      "options": {
+         "option 1": "Logical CCCH → transport RACH → Physical PRACH",
+         "option 2": "Logical DCCH → transport UL-SCH → Physical PUSCH",
+         "option 3": "Logical DTCH → transport UL-SCH → Physical PUSCH",
+         "option 4": "Logical BCCH → transport UL-SCH → Physical PUSCH"
+      },
+      "answer": "option 2: Logical DCCH → transport UL-SCH → Physical PUSCH",
+      "explanation": "In NR (as in LTE), dedicated RRC signaling when a UE is connected uses the DCCH (Dedicated Control Channel) as the logical channel. That data then goes through the UL-SCH (Uplink Shared Channel) transport service and is transmitted over the PUSCH (Physical Uplink Shared Channel) on the uplink. CCCH (Common Control Channel) is only used for initial connection setup before dedicated channels are established. DTCH is for user-plane data, and BCCH is for downlink broadcast information. So, an uplink RRC message in connected mode goes via DCCH→UL-SCH→PUSCH.",
+      "category": "nr_phy_mapping"
+   },
+   {
+      "question": "Paging in 5G NR is carried over certain channels. If the core network pages a UE, which logical channel, transport channel, and physical channel are used in NR for the paging message?",
+      "options": {
+         "option 1": "Paging uses a dedicated DCCH on the PUCCH",
+         "option 2": "Paging is delivered on the PCCH (Paging Control Channel), mapped to the PCH transport channel, which is carried on the downlink PDSCH in the paging occasion",
+         "option 3": "Paging goes on BCCH -> BCH like the MIB",
+         "option 4": "NR doesn’t have paging; UEs check the internet for incoming data"
+      },
+      "answer": "option 2: Paging is delivered on the PCCH (Paging Control Channel), mapped to the PCH transport channel, which is carried on the downlink PDSCH in the paging occasion",
+      "explanation": "NR retains a similar concept for paging as LTE. The network uses the PCCH (a logical channel for paging messages). The PCCH is mapped onto the PCH transport channel (Paging Channel). Unlike broadcast system information (which also goes on PDSCH but under BCCH), the paging messages on PCH are scheduled at specific paging occasions, and the UE monitors those occasions. The actual bits are delivered via PDSCH (the physical data channel) addressed to a Paging-RNTI. So effectively: PCCH -> PCH -> PDSCH. The UE decodes PDCCH for its Paging-RNTI at the designated time, and then reads the paging content on PDSCH.",
+      "category": "nr_phy_mapping"
+   },
+   {
+      "question": "For downlink user data in NR (for example, an IP packet to the UE), what is the sequence of channel mapping from logical channel to physical channel?",
+      "options": {
+         "option 1": "The data goes on a DTCH (Dedicated Traffic Channel) logical channel, which is carried by the DL-SCH (Downlink Shared Channel) transport channel, and then transmitted over the PDSCH (Physical Downlink Shared Channel)",
+         "option 2": "User data uses the DCCH logical channel on the PDSCH",
+         "option 3": "User data is sent on BCH since it’s broadcasted to one user",
+         "option 4": "It uses UL-SCH on the downlink for user data"
+      },
+      "answer": "option 1: The data goes on a DTCH (Dedicated Traffic Channel) logical channel, which is carried by the DL-SCH (Downlink Shared Channel) transport channel, and then transmitted over the PDSCH (Physical Downlink Shared Channel)",
+      "explanation": "In NR, as in LTE, user plane data for a specific UE flows through the dedicated traffic channels and shared channels. For downlink, the IP packet from the core network is delivered to the gNB, which places it on a DTCH (logical channel) if it’s destined for a specific UE’s data radio bearer. This is then carried on the DL-SCH transport channel, which is the typical downlink shared data channel that can be scheduled to UEs. Finally, the bits are transmitted over the air on the PDSCH (the physical downlink shared channel). So the chain is DTCH → DL-SCH → PDSCH for downlink unicast user data.",
+      "category": "nr_phy_mapping"
+   },
+   {
+      "question": "5G NR’s downlink control channel design differs from LTE’s fixed control region. What is a CORESET in NR, and how does it relate to PDCCH and control channel flexibility compared to LTE?",
+      "options": {
+         "option 1": "CORESET (Control Resource Set) is a set of time-frequency resources in NR where PDCCH can be transmitted. Unlike LTE’s fixed first symbols for control, NR uses CORESETs configured by the network, which allows control messages (DCI on PDCCH) to be placed flexibly in a slot (not always at the beginning). This gives NR more scheduling flexibility and the ability to concentrate or move control channels as needed",
+         "option 2": "CORESET is the codeblock segmentation technique for LDPC",
+         "option 3": "CORESET is a special uplink channel for control information",
+         "option 4": "NR doesn’t use PDCCH; CORESET replaces all control channels with a new method"
+      },
+      "answer": "option 1: CORESET (Control Resource Set) is a set of time-frequency resources in NR where PDCCH can be transmitted. Unlike LTE’s fixed first symbols for control, NR uses CORESETs configured by the network, which allows control messages (DCI on PDCCH) to be placed flexibly in a slot (not always at the beginning). This gives NR more scheduling flexibility and the ability to concentrate or move control channels as needed",
+      "explanation": "LTE had a static control region at the start of each subframe (e.g., first 1-3 OFDM symbols) for PDCCH. NR replaces this with the concept of CORESETs, which are basically configurable control channel regions. A CORESET specifies particular OFDM symbols and frequency RBs where PDCCH can be transmitted. The gNB can have CORESETs at different positions (for common or UE-specific controls, etc.). This means, for example, NR can place control info at different times or frequency locations, optimizing for different scenarios (like beamforming or TDD patterns). CORESETs are accompanied by search space configurations that tell the UE where to look for its PDCCH candidates. Overall, this approach provides flexibility – control is not tied to the beginning of every slot, and multiple control regions can exist, improving the efficiency and adaptability of downlink control.",
+      "category": "nr_phy_control"
+   },
+   {
+      "question": "NR doesn’t have a PHICH (Physical HARQ Indicator Channel) like LTE did. How are uplink HARQ acknowledgments (ACK/NACK for UL transmissions) signaled to the UE in 5G NR?",
+      "options": {
+         "option 1": "Via a field in the Downlink Control Information (DCI) on PDCCH, or implicitly with the scheduling grant – the gNB includes ACK/NACK for uplink packets in the control messages, removing the need for a separate PHICH channel",
+         "option 2": "Through the PBCH broadcast periodically",
+         "option 3": "Using the PUCCH in the uplink (UE guesses the ACK from its own transmission)",
+         "option 4": "NR doesn’t use HARQ for uplink, so no ACK/NACK is needed"
+      },
+      "answer": "option 1: Via a field in the Downlink Control Information (DCI) on PDCCH, or implicitly with the scheduling grant – the gNB includes ACK/NACK for uplink packets in the control messages, removing the need for a separate PHICH channel",
+      "explanation": "LTE employed PHICH to send a quick ACK/NACK (in downlink) for UL transmissions. NR removed PHICH to save resources and because NR’s frame structure and scheduling allow other ways to signal the feedback. In NR, the gNB typically provides HARQ feedback for uplink data in the downlink control domain. For example, when the gNB schedules new uplink resources (via a DCI format 0_1), it can include the HARQ acknowledgment for the previous uplink transmission. Alternatively, a specific DCI can be used solely to convey ACK/NACK. In summary, uplink HARQ feedback is piggybacked on PDCCH/DCI messages, meaning a dedicated physical channel like PHICH is no longer needed.",
+      "category": "nr_phy_control"
+   },
+   {
+      "question": "The Physical Uplink Control Channel (PUCCH) in NR has multiple formats to carry different amounts of information. When would a UE use a longer-duration PUCCH (with multiple OFDM symbols) instead of a short PUCCH, and what kind of information might it be carrying in that case?",
+      "options": {
+         "option 1": "The UE uses a long PUCCH when it has to transmit larger control payloads, like a scheduling request or CSI report with many bits or multiple HARQ ACKs at once. Long PUCCH formats (e.g., Format 3/4) can span several symbols or even multiple slots to accommodate more bits, whereas short PUCCH (Format 0/1) of 1-2 symbols is used for simple one-bit or two-bit acknowledgments",
+         "option 2": "PUCCH length is random and has no relation to payload",
+         "option 3": "PUCCH is always one symbol in NR, unlike LTE",
+         "option 4": "The UE chooses a long PUCCH only when the cell is about to drop"
+      },
+      "answer": "option 1: The UE uses a long PUCCH when it has to transmit larger control payloads, like a scheduling request or CSI report with many bits or multiple HARQ ACKs at once. Long PUCCH formats (e.g., Format 3/4) can span several symbols or even multiple slots to accommodate more bits, whereas short PUCCH (Format 0/1) of 1-2 symbols is used for simple one-bit or two-bit acknowledgments",
+      "explanation": "NR’s uplink control channel design is quite flexible. For very small pieces of information (like a single HARQ ACK/NACK or a scheduling request), NR can use PUCCH formats that last only 1 or 2 OFDM symbols (minimizing overhead). These are analogous to LTE’s short PUCCH and are efficient for a couple of bits. However, if the UE needs to send a larger control message – say it has to report Channel State Information (CSI) which could be several bits, or it needs to send combined ACK/NACK for a bundle of downlink transmissions – the UE will use a longer PUCCH format that spans more symbols (or even multiple slots for the richest formats). These longer PUCCHs provide more capacity for bits and better reliability for critical reports. The network configures which PUCCH format to use based on the expected payload size.",
+      "category": "nr_phy_control"
+   },
+   {
+      "question": "Release 16 of 5G NR introduced the concept of Conditional Handover (CHO). How does the gNB use an RRC Reconfiguration message to set up a conditional handover, and what does the UE do with that information until a condition is met?",
+      "options": {
+         "option 1": "Conditional handover is not handled by RRC; it’s purely a core network feature",
+         "option 2": "The gNB provides the UE with one or more prepared target cell configurations inside an RRC Reconfiguration, each tagged with a condition (e.g., \"if serving cell quality drops below X\"). The UE stores these configurations but does not immediately move. If and when the condition is satisfied (say, link quality triggers the event), the UE can autonomously perform the handover to the predetermined target and then acknowledge via RRC Reconfiguration Complete to the new cell",
+         "option 3": "The gNB sends RRC Release and expects the UE to find a better cell on its own",
+         "option 4": "The UE is instructed to handover immediately but wait for confirmation from the target"
+      },
+      "answer": "option 2: The gNB provides the UE with one or more prepared target cell configurations inside an RRC Reconfiguration, each tagged with a condition (e.g., \"if serving cell quality drops below X\"). The UE stores these configurations but does not immediately move. If and when the condition is satisfied (say, link quality triggers the event), the UE can autonomously perform the handover to the predetermined target and then acknowledge via RRC Reconfiguration Complete to the new cell",
+      "explanation": "In Conditional Handover, the source gNB essentially sends the UE an RRC Reconfiguration that includes the necessary info for one or multiple potential target cells (like frequencies, cell IDs, access info), along with the specific condition under which to execute the handover to each target. For example, it might specify: \"If the current cell’s RSRP falls below Y and target cell Z’s is above X, then handover to cell Z.\" The UE keeps this info ready. It remains on the current serving cell until the trigger condition occurs. At that point, without waiting for a new command from the source, the UE can initiate the handover to the target using the pre-provided configuration. After moving to the target, it sends an RRC Reconfiguration Complete to finalize. This mechanism improves mobility robustness and reduces handover interruption time, as the preparation is done in advance.",
+      "category": "nr_rrc_recfg"
+   },
+   {
+      "question": "If a 5G network wants to add a secondary carrier (scell) for a UE (Carrier Aggregation) or even configure dual connectivity, which RRC procedure is used to deliver the necessary configuration to the UE, and what kind of information would that configuration include?",
+      "options": {
+         "option 1": "The network uses a MAC message to add carriers",
+         "option 2": "An RRC Reconfiguration message is used to set up Carrier Aggregation or Dual Connectivity. It would include a Secondary Cell Group or Scell configuration for the new carrier(s) – detailing the new cell’s frequency, bandwidth, timing offset, and any new radio bearers or MAC/PHY configurations the UE must apply for that secondary cell",
+         "option 3": "A special RRC AddCarrier message handles this, separate from Reconfiguration",
+         "option 4": "No explicit RRC signaling is needed; the UE can aggregate carriers automatically"
+      },
+      "answer": "option 2: An RRC Reconfiguration message is used to set up Carrier Aggregation or Dual Connectivity. It would include a Secondary Cell Group or Scell configuration for the new carrier(s) – detailing the new cell’s frequency, bandwidth, timing offset, and any new radio bearers or MAC/PHY configurations the UE must apply for that secondary cell",
+      "explanation": "Adding secondary carriers (whether within the same gNB for Carrier Aggregation, or involving a Secondary gNB for dual connectivity like EN-DC) is handled by RRC signaling. The master node will send an RRC Reconfiguration to the UE. In the case of CA, this message carries an Scell configuration (with info such as the carrier frequency, cell identity, and radio resource config for that cell). In the case of dual connectivity, it can include an entire SecondaryCellGroup (SCG) configuration, which might encapsulate RRC parameters coming from the secondary node. In both cases, the UE receives all the needed details (what new DL/UL resources to use, how scheduling works on that cell, etc.) in that reconfiguration message and, after applying them, responds with RRC Reconfiguration Complete to confirm the addition.",
+      "category": "nr_rrc_recfg"
+   },
+   {
+      "question": "How does a gNB configure a UE to perform measurements on other frequencies or cells in NR, and what RRC message and elements are involved in such a configuration?",
+      "options": {
+         "option 1": "Measurement configuration isn’t needed in NR because the UE always scans everything by default",
+         "option 2": "The gNB sends an RRC Reconfiguration message including a measConfig, which lists measurement objects (frequencies/cells to measure), reporting criteria, and possibly gap configurations. The UE applies this and will periodically measure the specified frequencies/cells and report back (e.g., via Measurement Report) when the configured events/triggers (like certain signal thresholds) are met",
+         "option 3": "Measurements are configured via NAS messages (AMF directs the UE)",
+         "option 4": "The UE autonomously decides measurement parameters; the network just reads the results"
+      },
+      "answer": "option 2: The gNB sends an RRC Reconfiguration message including a measConfig, which lists measurement objects (frequencies/cells to measure), reporting criteria, and possibly gap configurations. The UE applies this and will periodically measure the specified frequencies/cells and report back (e.g., via Measurement Report) when the configured events/triggers (like certain signal thresholds) are met",
+      "explanation": "Measurement configuration in NR is handled by the RRC layer similarly to LTE. The gNB, when it wants the UE to monitor other frequencies or neighboring cells (whether intra-frequency, inter-frequency, or even inter-RAT like LTE cells), will issue an RRC Reconfiguration containing a measConfig. This configuration defines what to measure (measurement objects for certain carrier frequencies or cell sets), how to report it (reporting configurations, such as event-triggered reports like \"Event A3: neighbor becomes offset better than serving\" with thresholds), and may include measurement gaps if needed (to allow the UE time on other frequencies if not in EN-DC). Once configured, the UE will carry out these measurements in the background and send Measurement Report messages when conditions are satisfied, enabling the network to decide on mobility actions like handovers.",
+      "category": "nr_rrc_recfg"
+   },
+   {
+      "question": "Demodulation Reference Signals (DMRS) are critical in NR for both downlink and uplink. What is the purpose of DMRS in NR, and how does their usage differ between downlink and uplink transmissions?",
+      "options": {
+         "option 1": "DMRS are used purely for initial cell search like the sync signals",
+         "option 2": "DMRS are reference signals embedded in data transmissions (PDSCH for downlink, PUSCH for uplink) that allow the receiver to estimate the radio channel for that transmission. In downlink, the gNB inserts DMRS in the PDSCH so UEs can decode their data, and in uplink, the UE inserts DMRS in its PUSCH so the gNB can decode. They are connection-specific, unlike broadcast reference signals",
+         "option 3": "DMRS carry user data in their sequence, not reference information",
+         "option 4": "Uplink uses DMRS but downlink does not in NR"
+      },
+      "answer": "option 2: DMRS are reference signals embedded in data transmissions (PDSCH for downlink, PUSCH for uplink) that allow the receiver to estimate the radio channel for that transmission. In downlink, the gNB inserts DMRS in the PDSCH so UEs can decode their data, and in uplink, the UE inserts DMRS in its PUSCH so the gNB can decode. They are connection-specific, unlike broadcast reference signals",
+      "explanation": "Demodulation RS are essential for coherent demodulation of data channels. On the downlink, when the gNB sends data (PDSCH) to a particular UE, it multiplexes DMRS symbols within that PDSCH burst. The UE knows where these DMRS symbols are and uses them to estimate the channel impairments (phase, amplitude changes) on that specific transmission – basically calibrating itself to decode the rest of the data. Similarly, for uplink, the UE includes DMRS in its PUSCH (carrying its uplink data), so the gNB can do the channel estimation for that UE’s signal. DMRS are not broadcast to everyone; they’re tied to the specific transmission (often generated with UE-specific identifiers), distinguishing them from common reference signals like CSI-RS or the old LTE CRS. This allows NR to support advanced antenna techniques (like beamforming and MIMO) more efficiently by having dedicated reference signals for each layer or user’s transmission.",
+      "category": "nr_phy_rs"
+   },
+   {
+      "question": "Sounding Reference Signals (SRS) are sent by the UE in NR. What is the main purpose of SRS, and how do they help the gNB in uplink communication?",
+      "options": {
+         "option 1": "SRS are used by the UE to request scheduling opportunities from the gNB",
+         "option 2": "SRS are uplink reference signals transmitted by the UE, primarily so that the gNB can measure the uplink channel quality across different frequencies or antenna beams. By receiving SRS, the gNB learns about the channel conditions (e.g., which frequencies have better channel quality or how the UE’s signal varies by beam), aiding in scheduling decisions and uplink beamforming",
+         "option 3": "SRS carry the UE’s CSI feedback to the gNB",
+         "option 4": "The UE uses SRS to synchronize with the network during handover"
+      },
+      "answer": "option 2: SRS are uplink reference signals transmitted by the UE, primarily so that the gNB can measure the uplink channel quality across different frequencies or antenna beams. By receiving SRS, the gNB learns about the channel conditions (e.g., which frequencies have better channel quality or how the UE’s signal varies by beam), aiding in scheduling decisions and uplink beamforming",
+      "explanation": "The Sounding Reference Signal is a probe signal. The UE can be instructed to send SRS on certain resources, often at the edges of its allocated bandwidth or across the whole band in chunks over time. The gNB listens to these signals to gauge how the uplink channel is behaving per frequency (for frequency-selective scheduling) and per spatial direction (for uplink beam management). Essentially, SRS gives the network insight into the uplink channel quality without needing a data transmission to measure. With this info, the gNB can decide things like which frequency resource is best for the UE’s next transmission or adjust its receiver beamforming to the UE’s angle-of-arrival. This improves uplink throughput and reliability.",
+      "category": "nr_phy_rs"
+   },
+   {
+      "question": "NR operates at high frequencies where phase noise can be significant. What new reference signal did NR introduce to help track and compensate for phase noise in communications, especially for higher-order modulation or mmWave bands, and how is it used?",
+      "options": {
+         "option 1": "NR didn’t introduce any new reference signal for this; it relies on DMRS only",
+         "option 2": "Phase Tracking Reference Signal (PTRS) was introduced. PTRS is a special reference signal transmitted alongside data (in PDSCH or PUSCH) at a low density specifically to allow receivers to estimate and correct for phase noise and frequency offset. It’s especially important for higher modulation schemes and mmWave (FR2) where oscillator phase noise is more pronounced",
+         "option 3": "CSI-RS is used for phase noise tracking",
+         "option 4": "They use the LTE CRS for that purpose in dual connectivity"
+      },
+      "answer": "option 2: Phase Tracking Reference Signal (PTRS) was introduced. PTRS is a special reference signal transmitted alongside data (in PDSCH or PUSCH) at a low density specifically to allow receivers to estimate and correct for phase noise and frequency offset. It’s especially important for higher modulation schemes and mmWave (FR2) where oscillator phase noise is more pronounced",
+      "explanation": "Phase noise (jitter in the oscillator that can particularly blur higher-order QAM constellations) is a serious issue at mmWave frequencies and with 256-QAM, etc. To combat this, 5G NR added the PTRS. The gNB can configure PTRS to be present on certain symbols within a PDSCH/PUSCH transmission. The PTRS sequences are known to the receiver and are placed in such a way that the receiver can track the phase error over time. By comparing the received PTRS phase to the expected phase, the UE or gNB can estimate any phase rotation that occurred and correct the constellation accordingly. PTRS isn’t needed for every scenario (for example, at lower frequencies or lower modulations, it might be off to save overhead), but it’s a crucial tool for maintaining link quality in challenging high-frequency, high-throughput scenarios.",
+      "category": "nr_phy_rs"
+   },
+   {
+      "question": "After initial access, the gNB and UE engage in beam refinement. Which downlink and uplink reference signals are typically used for ongoing beam management, and what does each allow the measuring side to do?",
+      "options": {
+         "option 1": "Downlink uses CSI-RS for beam management and uplink uses SRS. The gNB transmits CSI-RS in various beam directions during connected mode, so the UE can measure and report the best beam (or panel) for downlink. Conversely, the UE sends uplink SRS, which the gNB measures to adjust or select the best uplink receive beam. Together, these reference signals allow dynamic beam adjustment beyond the initial SSB beam",
+         "option 2": "Downlink uses only SSB for beam measurements and uplink has no beam reference signals",
+         "option 3": "Both downlink and uplink use DMRS from data channels for beam management, no special RS involved",
+         "option 4": "NR doesn’t change beams after initial access; it’s fixed"
+      },
+      "answer": "option 1: Downlink uses CSI-RS for beam management and uplink uses SRS. The gNB transmits CSI-RS in various beam directions during connected mode, so the UE can measure and report the best beam (or panel) for downlink. Conversely, the UE sends uplink SRS, which the gNB measures to adjust or select the best uplink receive beam. Together, these reference signals allow dynamic beam adjustment beyond the initial SSB beam",
+      "explanation": "Initial access beams in NR are based on SS Blocks, but once connected, more refined and frequent beam management is achieved with dedicated reference signals. On the downlink, CSI-RS (Channel State Information RS) can be configured as beamforming reference signals – the gNB may sweep CSI-RS across different beams or panels. The UE measures their quality and reports e.g., the preferred beam or a CSI report (like PMI, RI) indicating how to tweak the beam. This helps the gNB pick the best downlink beam for the UE. On the uplink, the UE’s SRS (Sounding RS) plays a similar role: the UE might send SRS using different transmit beams (if it has that capability), and the gNB measures to choose the best uplink beam or to adjust its receiver. Using CSI-RS and SRS in tandem ensures both downlink and uplink directions are beam-optimized as conditions change.",
+      "category": "nr_phy_beam_rs"
+   },
+   {
+      "question": "How does a UE detect a beam failure in NR, and which reference signal does it typically monitor to make this decision? Once a beam failure is detected, what sequence does the UE follow to recover using beam reference signals?",
+      "options": {
+         "option 1": "The UE monitors the SS Blocks of the cell; if it misses a certain number in a row, that’s a beam failure. It then gives up the connection entirely",
+         "option 2": "The UE monitors the quality of a configured beam reference signal (often CSI-RS or the serving SSB). If a certain number of consecutive such signals are missed or fall below a threshold (beam failure indication), it declares a beam failure. To recover, the UE searches for an alternative beam (by measuring other SSBs/CSI-RS), then triggers a beam failure recovery random access on a new beam to re-establish the link with the gNB on that better beam",
+         "option 3": "Beam failure is declared if RLC ACKs stop, and recovery is to restart RRC setup",
+         "option 4": "The gNB informs the UE via PDCCH when its beam has failed"
+      },
+      "answer": "option 2: The UE monitors the quality of a configured beam reference signal (often CSI-RS or the serving SSB). If a certain number of consecutive such signals are missed or fall below a threshold (beam failure indication), it declares a beam failure. To recover, the UE searches for an alternative beam (by measuring other SSBs/CSI-RS), then triggers a beam failure recovery random access on a new beam to re-establish the link with the gNB on that better beam",
+      "explanation": "NR defines beam failure detection thresholds (for example, the UE might consider a beam failed if it misses N consecutive beam reference signals – which could be specific CSI-RS or SSB depending on configuration – from the serving beam). Essentially, if the UE can’t reliably demodulate the reference signals that keep the link aligned, it suspects the beam is lost. On detecting this, the UE doesn’t immediately drop the call; instead, it looks for a candidate beam (using other beams’ SSB or CSI-RS that it was possibly tracking in the background). When it finds a suitable alternative beam, it initiates the beam failure recovery procedure by sending a preamble on that new beam. The gNB will respond and command the UE to switch to that beam, thereby restoring the data link. This way, the beam can be switched with minimal disruption, rather than losing the connection entirely.",
+      "category": "nr_phy_beam_rs"
+   },
+   {
+      "question": "Beam management in NR can be described by steps often labeled P1 to P4 (beam sweeping, measurement, reporting, and decision). Focusing on the beam reporting step: what does the UE send to the gNB during beam reporting (P3), and which reference signals’ measurements is this report based on?",
+      "options": {
+         "option 1": "The UE sends a Beam Report MAC CE without any measurements",
+         "option 2": "The UE sends a CSI report (via PUCCH or PUSCH) containing information about which downlink beam (or beams) are strongest – e.g., the index of the best CSI-RS or SSB and corresponding signal quality (CSI-RSRP). This report is based on the UE’s measurements of the downlink reference signals (CSI-RS or SSB) that were transmitted during beam sweeping (P1/P2). The gNB uses this report (P3) to decide if it needs to adjust or switch the beam (P4)",
+         "option 3": "The UE sends the raw SSB samples to the gNB for analysis",
+         "option 4": "No reporting is done; the gNB figures it out by itself"
+      },
+      "answer": "option 2: The UE sends a CSI report (via PUCCH or PUSCH) containing information about which downlink beam (or beams) are strongest – e.g., the index of the best CSI-RS or SSB and corresponding signal quality (CSI-RSRP). This report is based on the UE’s measurements of the downlink reference signals (CSI-RS or SSB) that were transmitted during beam sweeping (P1/P2). The gNB uses this report (P3) to decide if it needs to adjust or switch the beam (P4)",
+      "explanation": "In the beam management cycle, after the gNB transmits various beams (sweeping, using SSBs or CSI-RS) and the UE measures them, the UE needs to inform the network of the results. This happens in the beam reporting phase. The UE typically formulates a CSI report which can include the identifier of the preferred beam (for instance, the best SSB index or CSI-RS resource) and the measured strength (like RSRP). This report is usually sent on an uplink control channel (often via PUCCH if it’s a short report). The network then knows which beam is optimal according to the UE’s perspective. Using that info, the gNB can then switch its downlink transmission to that beam or adjust its beamforming accordingly, which is the final decision/application phase (P4). In summary, the UE’s beam report is derived from the downlink reference signals it measured and is critical for the network to align the beam with the UE’s position.",
+      "category": "nr_phy_beam_rs"
+   },
+   {
+      "question": "NR’s PDCCH search space concept is new compared to LTE. What is a \"search space\" in NR, and how does it help the UE find its downlink control information (DCI) on the PDCCH?",
+      "options": {
+         "option 1": "Search space is the term for the UE’s synchronization raster",
+         "option 2": "A search space in NR is a set of candidate PDCCH locations (defined by CORESET, time, and aggregation level) that the UE monitors for control messages. The UE is configured with common search spaces (for system or paging DCIs) and UE-specific search spaces (for its own DCIs). This tells the UE exactly where to attempt decoding PDCCH, rather than blindly checking the entire band. It’s a flexible way to allocate control channel candidates, unlike LTE’s fixed mapping",
+         "option 3": "Search space refers to the frequency domain bandwidth of PDCCH",
+         "option 4": "It is a memory area in the UE where PDCCH is stored"
+      },
+      "answer": "option 2: A search space in NR is a set of candidate PDCCH locations (defined by CORESET, time, and aggregation level) that the UE monitors for control messages. The UE is configured with common search spaces (for system or paging DCIs) and UE-specific search spaces (for its own DCIs). This tells the UE exactly where to attempt decoding PDCCH, rather than blindly checking the entire band. It’s a flexible way to allocate control channel candidates, unlike LTE’s fixed mapping",
+      "explanation": "NR’s search space concept is essentially the answer to the question: \"where should the UE look for PDCCHs meant for it (or for all UEs)?\" A search space defines a specific CORESET (control resource set) along with a set of PDCCH candidates within that CORESET (spread across certain monitoring occasions and at certain aggregation levels). The UE is given search space configurations via RRC. For example, a common search space might be configured in CORESET0 for SIB1 or paging, whereas a UE-specific search space might be configured in another CORESET for that UE’s scheduled data grants. By restricting the UE’s PDCCH decoding attempts to these search spaces, NR reduces the complexity and can flexibly allocate different control regions for different purposes. This is more adaptable than LTE’s approach, where the UE always looked in the first N symbols of the subframe across the whole carrier for any PDCCHs (with predetermined search capacities).",
+      "category": "nr_phy_mapping_control"
+   },
+   {
+      "question": "How is SIB1 scheduled in NR via PDCCH and what special CORESET/Search Space configuration is used for it, as indicated in the MIB?",
+      "options": {
+         "option 1": "SIB1 isn’t scheduled via PDCCH; it’s directly on PBCH",
+         "option 2": "The NR MIB signals a specific configuration for CORESET #0 and Search Space #0 for SIB1 scheduling. This means the UE, after reading MIB, knows that in a certain frame/subframe pattern, within CORESET0, there will be a PDCCH (using a known RNTI) that schedules SIB1 on PDSCH. In essence, CORESET0/SearchSpace0 is reserved for SIB1 and other broadcast messages, ensuring the UE can find SIB1’s DCI and thereby receive SIB1",
+         "option 3": "SIB1 is sent on a dedicated always-on control channel separate from PDCCH",
+         "option 4": "The gNB pages SIB1 to UEs individually"
+      },
+      "answer": "option 2: The NR MIB signals a specific configuration for CORESET #0 and Search Space #0 for SIB1 scheduling. This means the UE, after reading MIB, knows that in a certain frame/subframe pattern, within CORESET0, there will be a PDCCH (using a known RNTI) that schedules SIB1 on PDSCH. In essence, CORESET0/SearchSpace0 is reserved for SIB1 and other broadcast messages, ensuring the UE can find SIB1’s DCI and thereby receive SIB1",
+      "explanation": "NR uses CORESET0 and search space 0 as a standardized way to transmit SIB1 (and possibly other system information messages). The Master Information Block (MIB) includes pointers that effectively define CORESET0's time-frequency resources and the periodicity at which SIB1 will be indicated. CORESET0 typically occupies a section of symbols (often in half-frame intervals) and within it, search space 0 is where the PDCCH for SIB1 will appear. The UE knows to look for a PDCCH with the SI-RNTI in that space. This PDCCH, when decoded, gives the scheduling (DCI) for the SIB1 on PDSCH. This mechanism ensures all UEs can reliably find SIB1 after sync. It’s a different approach from LTE, where SIB1 was at a fixed timing (every 80 ms, etc.) and had a fixed transmission schedule; NR’s method is more flexible and signaled via MIB.",
+      "category": "nr_phy_mapping_control"
+   },
+   {
+      "question": "LTE had a rigid control region at the start of each subframe. How does NR’s flexible mapping of control channels (PDCCH) within a slot provide advantages, for example in a scenario with dynamic TDD slots or varying load?",
+      "options": {
+         "option 1": "It doesn’t provide any advantage; it’s just more complicated",
+         "option 2": "Because NR can place PDCCH in different symbols via CORESETs, it can optimize use of air interface resources. In a TDD frame, certain symbols might be reserved for downlink vs uplink dynamically; NR can shift the PDCCH to always fit in downlink portions. Also, if a slot has low data load, the control can be minimized to a smaller CORESET, freeing the rest of the slot for other uses (or turning it off). This flexibility improves efficiency and allows, for example, extended data region when control overhead is small, unlike LTE which always blocked out the first part of the subframe for control even if not needed",
+         "option 3": "NR’s control mapping allows control messages to be sent over the X2 interface instead of the air",
+         "option 4": "Flexible control mapping in NR is only for interference coordination and has no impact on efficiency"
+      },
+      "answer": "option 2: Because NR can place PDCCH in different symbols via CORESETs, it can optimize use of air interface resources. In a TDD frame, certain symbols might be reserved for downlink vs uplink dynamically; NR can shift the PDCCH to always fit in downlink portions. Also, if a slot has low data load, the control can be minimized to a smaller CORESET, freeing the rest of the slot for other uses (or turning it off). This flexibility improves efficiency and allows, for example, extended data region when control overhead is small, unlike LTE which always blocked out the first part of the subframe for control even if not needed",
+      "explanation": "NR’s flexible control channel placement is beneficial in multiple scenarios. For one, in dynamic TDD, the split between downlink and uplink within a slot can change; having PDCCH tied to a configurable CORESET means the gNB can ensure the PDCCH always lies in a downlink portion of the slot, even if it’s not the very beginning, thereby accommodating various DL/UL patterns. Additionally, if the control information to send is minimal (say, not many UEs to schedule in a given slot), NR can confine PDCCH to maybe just 1 symbol or a narrow bandwidth CORESET, leaving more symbols or frequencies for data or even allowing early switching to uplink in that slot. LTE’s fixed control overhead could be wasteful in light load—NR avoids that by scaling control region as needed. Overall, it leads to better resource utilization and adaptability to traffic and frame configuration.",
+      "category": "nr_phy_mapping_control"
+   }
+]

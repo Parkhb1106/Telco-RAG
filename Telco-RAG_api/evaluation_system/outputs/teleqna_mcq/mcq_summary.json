@@ -2,30 +2,35 @@
   "dataset": "netop/TeleQnA",
   "split": "test",
   "model_name": "Qwen/Qwen3-30B-A3B-Instruct-2507",
-  "n_evaluated": 10,
-  "accuracy": 0.9,
-  "correct": 9,
-  "elapsed_sec": 12.185198068618774,
+  "n_evaluated": 100,
+  "accuracy": 0.7,
+  "correct": 70,
+  "elapsed_sec": 136.87837433815002,
   "accuracy_by_category": {
-    "Research overview": {
-      "n": 4,
-      "correct": 4,
-      "accuracy": 1.0
-    },
-    "Research publications": {
-      "n": 2,
-      "correct": 2,
-      "accuracy": 1.0
-    },
-    "Standards overview": {
+    "Lexicon": {
       "n": 1,
       "correct": 1,
       "accuracy": 1.0
     },
+    "Research overview": {
+      "n": 23,
+      "correct": 17,
+      "accuracy": 0.7391304347826086
+    },
+    "Research publications": {
+      "n": 40,
+      "correct": 31,
+      "accuracy": 0.775
+    },
+    "Standards overview": {
+      "n": 13,
+      "correct": 9,
+      "accuracy": 0.6923076923076923
+    },
     "Standards specifications": {
-      "n": 3,
-      "correct": 2,
-      "accuracy": 0.6666666666666666
+      "n": 23,
+      "correct": 12,
+      "accuracy": 0.5217391304347826
     }
   },
   "outputs": {
