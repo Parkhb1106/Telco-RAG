@@ -3,29 +3,29 @@
   "split": "test",
   "model_name": "Qwen/Qwen3-30B-A3B-Instruct-2507",
   "n_evaluated": 10,
-  "accuracy": 0.1,
-  "correct": 1,
-  "elapsed_sec": 15.274352788925171,
+  "accuracy": 0.9,
+  "correct": 9,
+  "elapsed_sec": 12.185198068618774,
   "accuracy_by_category": {
     "Research overview": {
       "n": 4,
-      "correct": 1,
-      "accuracy": 0.25
+      "correct": 4,
+      "accuracy": 1.0
     },
     "Research publications": {
       "n": 2,
-      "correct": 0,
-      "accuracy": 0.0
+      "correct": 2,
+      "accuracy": 1.0
     },
     "Standards overview": {
       "n": 1,
-      "correct": 0,
-      "accuracy": 0.0
+      "correct": 1,
+      "accuracy": 1.0
     },
     "Standards specifications": {
       "n": 3,
-      "correct": 0,
-      "accuracy": 0.0
+      "correct": 2,
+      "accuracy": 0.6666666666666666
     }
   },
   "outputs": {

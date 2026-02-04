@@ -1,0 +1,197 @@
+[
+  {
+    "category": "5gs_nas_spec",
+    "type": "Conditioning",
+    "question": "In a 5GS environment, if a UE attempts an Initial Registration and receives a REGISTRATION REJECT message with cause #27 'N1 mode not allowed', but the UE is currently operating in a dual-mode (S1 mode and N1 mode) configuration, what is the expected immediate behavior of the UE regarding its usage setting?",
+    "options": {
+      "option 1": "The UE shall disable N1 mode, switch to S1 mode (EPC), and attempt an Attach procedure.",
+      "option 2": "The UE shall re-attempt Registration in 5GS after the back-off timer T3502 expires.",
+      "option 3": "The UE shall consider the USIM as invalid and enter the state 5GMM-DEREGISTERED.",
+      "option 4": "The UE shall maintain N1 mode capability but treat the current PLMN as forbidden for 5GS services."
+    },
+    "answer": "option 1: The UE shall disable N1 mode, switch to S1 mode (EPC), and attempt an Attach procedure.",
+    "explanation": "According to TS 24.501, if the UE receives cause #27, it implies 5G access is restricted. If the UE supports E-UTRA (S1 mode), it must disable N1 mode for the current PLMN and attempt to select E-UTRA to proceed with EPS services (Attach)."
+  },
+  {
+    "category": "eps_nas_spec",
+    "type": "Multi-Context",
+    "question": "Consider a UE in ECM-IDLE state. The periodic TAU timer (T3412) is about to expire, but currently, the RRC connection establishment fails due to 'Barred' access in the current cell. Reasoning on the interaction between NAS timers and RRC states, how should the UE handle the T3412 expiration?",
+    "options": {
+      "option 1": "The UE must freeze the T3412 timer and wait until it camps on a suitable cell before performing the update.",
+      "option 2": "The UE resets T3412 and enters EMM-DEREGISTERED state immediately.",
+      "option 3": "The T3412 expires, but the Tracking Area Update is delayed until the UE enters a cell where access is allowed.",
+      "option 4": "The UE forces an RRC connection ignoring the cell barring status to send the TAU request."
+    },
+    "answer": "option 3: The T3412 expires, but the Tracking Area Update is delayed until the UE enters a cell where access is allowed.",
+    "explanation": "If T3412 expires while the UE is unable to establish a connection (e.g., due to access barring or lack of coverage), the UE enters the EMM-REGISTERED.ATTEMPTING-TO-UPDATE state. The actual signaling is initiated only after a suitable cell is found and access is permitted."
+  },
+  {
+    "category": "lte_rrc_spec",
+    "type": "Conditioning",
+    "question": "In an LTE RRC Connection Reconfiguration scenario, if a UE receives a 'mobilityControlInfo' (Handover command) while simultaneously T310 (Radio Link Failure timer) is running due to physical layer problems, which procedure takes precedence?",
+    "options": {
+      "option 1": "The UE prioritizes the Handover procedure, stops T310, and attempts to synchronize with the target cell.",
+      "option 2": "The UE ignores the Handover command, declares RLF immediately, and initiates RRC Connection Reestablishment.",
+      "option 3": "The UE processes the Handover command only if T310 has not exceeded 50% of its value.",
+      "option 4": "The UE executes both procedures in parallel, attempting handover while monitoring the source cell link."
+    },
+    "answer": "option 1: The UE prioritizes the Handover procedure, stops T310, and attempts to synchronize with the target cell.",
+    "explanation": "According to TS 36.331, successful reception of the mobilityControlInfo (Handover command) implies the network is aware of the UE's situation and providing a solution. Thus, the UE stops T310 and attempts the handover, effectively treating the handover as a recovery mechanism."
+  },
+  {
+    "category": "nr_phy_frame",
+    "type": "Reasoning",
+    "question": "Given a 5G NR configuration with a Subcarrier Spacing (SCS) of 30 kHz (Numerology $\\mu=1$), if the network configures a slot format where the first 2 symbols are Downlink and the last 2 symbols are Uplink within a 14-symbol slot, why is a 'Guard Period' necessary, and how does the frame structure accommodate this switching time?",
+    "options": {
+      "option 1": "Guard Period is handled by the Flexible symbols between DL and UL; without it, the UE's Tx/Rx switching circuitry and propagation delay would cause interference.",
+      "option 2": "Guard Period is inserted by extending the Cyclic Prefix of the first Uplink symbol.",
+      "option 3": "Guard Period is not required in TDD systems if the cell radius is small enough (under 1km).",
+      "option 4": "The GP is explicitly defined as a separate physical channel in the Resource Grid."
+    },
+    "answer": "option 1: Guard Period is handled by the Flexible symbols between DL and UL; without it, the UE's Tx/Rx switching circuitry and propagation delay would cause interference.",
+    "explanation": "In TDD frame structures (referencing ShareTechnote Frame Structure), the transition from DL to UL requires a gap to account for propagation delay (timing advance) and the UE's hardware switching time. This is realized by configuring symbols between DL and UL regions as 'Flexible' (or undefined), which effectively act as the Guard Period."
+  },
+  {
+    "category": "nr_rach",
+    "type": "Multi-Context",
+    "question": "During a Contention-Based Random Access (CBRA) procedure in NR, if the UE sends Msg1 (Preamble) but does not receive a valid Msg2 (RAR) within the 'ra-ResponseWindow', and the Preamble Transmit Counter has not reached the maximum. What is the subsequent behavior regarding power ramping and beam selection?",
+    "options": {
+      "option 1": "The UE ramps up power by 'powerRampingStep', but must stay on the same SSB index even if its RSRP has degraded.",
+      "option 2": "The UE may select a different SSB with RSRP above the threshold; if the SSB changes, the power ramping counter is suspended/reset for that specific preamble transmission attempt.",
+      "option 3": "The UE increases power and retransmits immediately without checking SSB quality.",
+      "option 4": "The UE declares Random Access Failure immediately after the first window expiry."
+    },
+    "answer": "option 2: The UE may select a different SSB with RSRP above the threshold; if the SSB changes, the power ramping counter is suspended/reset for that specific preamble transmission attempt.",
+    "explanation": "According to TS 38.321 and RACH procedures, if retransmission is needed, the UE can re-select an SSB. If the UE changes the selected SSB (beam), the power ramping based on the previous beam's attempt is typically not applied directly (or counter is not incremented in the same way) to avoid excessive interference on a new beam."
+  },
+  {
+    "category": "nr_rrc_spec",
+    "type": "Conditioning",
+    "question": "In 5G NR, if a UE is in RRC_INACTIVE state and initiates an RRC Resume procedure, but the network responds with an RRCSetup message instead of an RRCResume message. What does this sequence imply about the UE's Context in the gNB?",
+    "options": {
+      "option 1": "The gNB successfully retrieved the UE context but decided to refresh the security keys.",
+      "option 2": "The gNB failed to retrieve or verify the UE Context (I-RNTI mismatch or anchor relocation failure), forcing a fallback to a new connection establishment.",
+      "option 3": "The UE requested a service that requires a new PDU session, triggering a full setup.",
+      "option 4": "This is a standard procedure for periodic RNA updates."
+    },
+    "answer": "option 2: The gNB failed to retrieve or verify the UE Context (I-RNTI mismatch or anchor relocation failure), forcing a fallback to a new connection establishment.",
+    "explanation": "When a UE sends an RRCResumeRequest, it expects an RRCResume. If the Network responds with RRCSetup, it indicates the Network could not find the stored UE Context (identified by I-RNTI) or rejected the resume, forcing the UE to discard the current context and establish a brand new RRC connection (Transition to RRC_IDLE logic then Setup)."
+  },
+  {
+    "category": "nr_sysinfo",
+    "type": "Reasoning",
+    "question": "A UE successfully decodes the MIB (Master Information Block) but fails to decode SIB1 after multiple attempts. Considering the role of SIB1 in cell selection, why is the UE required to treat this cell as 'Barred', and what is the restriction on re-selection?",
+    "options": {
+      "option 1": "SIB1 contains the 'cellBarred' flag; without it, the UE assumes the worst case (barred) and must not re-select this cell for 300 seconds (T300).",
+      "option 2": "SIB1 contains the PLMN identity list; without it, the UE cannot verify if the cell belongs to its provider.",
+      "option 3": "SIB1 contains the scheduling info for other SIBs; without it, the UE can still attach but only for emergency calls.",
+      "option 4": "Failure to decode SIB1 implies the cell is in sleep mode."
+    },
+    "answer": "option 1: SIB1 contains the 'cellBarred' flag; without it, the UE assumes the worst case (barred) and must not re-select this cell for 300 seconds (T300).",
+    "explanation": "SIB1 is the 'Remaining Minimum System Information' (RMSI). TS 38.304 specifies that if SIB1 cannot be decoded, the cell is treated as barred. The UE is generally not allowed to re-select the same cell for a specific duration (often same as T_barred) to prevent continuous battery drain on a failing cell."
+  },
+  {
+    "category": "nr_phy_beam",
+    "type": "Multi-Context",
+    "question": "In FR2 (mmWave), a UE is configured with Beam Failure Detection (BFD). If the physical layer detects that all monitored BFD-RS resources have a quality (BLER) worse than the threshold (Q_out) for a specific period, a Beam Failure Instance (BFI) is indicated to the MAC layer. How does the interplay between PHY layer detection and MAC layer timers result in a formal Beam Failure Recovery (BFR) request?",
+    "options": {
+      "option 1": "PHY sends a BFI every slot; MAC triggers BFR immediately upon receiving the first BFI.",
+      "option 2": "PHY sends BFI periodically; MAC counts these instances, and if the count reaches 'beamFailureInstanceMaxCount' before the 'beamFailureDetectionTimer' expires, BFR is triggered.",
+      "option 3": "PHY automatically triggers a Random Access on a new beam without consulting MAC.",
+      "option 4": "MAC resets the RRC connection immediately upon the first BFI indication."
+    },
+    "answer": "option 2: PHY sends BFI periodically; MAC counts these instances, and if the count reaches 'beamFailureInstanceMaxCount' before the 'beamFailureDetectionTimer' expires, BFR is triggered.",
+    "explanation": "This requires understanding the cross-layer interaction. PHY assesses radio link quality (RLM). If bad, it sends an indication (BFI) to MAC. MAC runs a counter and a timer. Only if the counter hits the max value (indicating persistent failure) *within* the timer window does the MAC initiate the Beam Failure Recovery procedure (e.g., sending a RACH on a new candidate beam)."
+  },
+  {
+    "category": "nr_rrc",
+    "type": "Conditioning",
+    "question": "During an RRC Reconfiguration involving a BWP (Bandwidth Part) switch, if the 'firstActiveDownlinkBWP-Id' is provided in the configuration, but the UE is currently performing a Random Access procedure initiated by a PDCCH order, how should the UE handle the BWP switching?",
+    "options": {
+      "option 1": "The UE immediately switches to the 'firstActiveDownlinkBWP-Id' and aborts the Random Access procedure.",
+      "option 2": "The UE ignores the BWP switch command until the Random Access procedure is completed.",
+      "option 3": "The UE performs the BWP switch only if the Random Access procedure was for initial access, otherwise it waits.",
+      "option 4": "The UE executes the BWP switch, but if the active BWP changes, the Random Access procedure may need to be restarted on the new BWP if the resources are not valid there."
+    },
+    "answer": "option 4: The UE executes the BWP switch, but if the active BWP changes, the Random Access procedure may need to be restarted on the new BWP if the resources are not valid there.",
+    "explanation": "BWP switching has high priority. However, RACH is bound to specific BWP resources. If the BWP is switched during RACH, the ongoing RACH is typically aborted or restarted on the new BWP because the PRACH resources on the old BWP are no longer valid."
+  },
+  {
+    "category": "nr_phy_mapping",
+    "type": "Reasoning",
+    "question": "In 5G NR Downlink channel mapping, the PDCCH (Physical Downlink Control Channel) is not mapped to the whole bandwidth but to a CORESET. Reasoning on the concept of 'REG bundles', why does NR map Control Channel Elements (CCEs) to Resource Element Groups (REGs) using interleaving in some scenarios?",
+    "options": {
+      "option 1": "Interleaving is used to maximize the data rate of the control information.",
+      "option 2": "Interleaving provides frequency diversity, making the control channel more robust against frequency-selective fading.",
+      "option 3": "Interleaving allows the PDCCH to occupy fewer symbols, reducing latency.",
+      "option 4": "Interleaving is strictly for alignment with LTE CRS positions."
+    },
+    "answer": "option 2: Interleaving provides frequency diversity, making the control channel more robust against frequency-selective fading.",
+    "explanation": "PDCCH consists of CCEs, which consist of REGs. There are two mapping modes: Interleaved and Non-interleaved. Interleaving distributes the REGs of a CCE across the frequency domain (within the CORESET). This ensures that a deep fade in one narrow frequency part doesn't destroy the entire control message, thus providing frequency diversity gain."
+  },
+  {
+    "category": "nr_phy_control",
+    "type": "Conditioning",
+    "question": "A UE monitors the Type0-PDCCH Common Search Space (CSS) to decode SIB1. The specific time-frequency resources for this CORESET are defined by the 'pdcch-ConfigSIB1' (ControlResourceSetZero). If the 'ControlResourceSetZero' index points to a table entry where the Number of RBs is smaller than the minimum bandwidth required for the SSB, can the UE still decode it?",
+    "options": {
+      "option 1": "Yes, because CORESET #0 and SSB can overlap or be disjoint; the UE blindly decodes based on the table index regardless of SSB size.",
+      "option 2": "No, the CORESET #0 must strictly fully contain the SSB in frequency domain.",
+      "option 3": "Yes, but only if the offset allows the CORESET to be within the channel bandwidth of the UE.",
+      "option 4": "No, this is an invalid configuration; CORESET #0 bandwidth is typically equal to or larger than the SSB bandwidth in valid configurations."
+    },
+    "answer": "option 3: Yes, but only if the offset allows the CORESET to be within the channel bandwidth of the UE.",
+    "explanation": "CORESET #0 is defined by a 4-bit integer pointing to tables in TS 38.213. While typically CORESET #0 covers the SSB, the critical condition is the multiplexing pattern (1, 2, or 3) and the offset. The UE locates CORESET #0 relative to the SSB. Even if sizes differ, as long as the relative positioning (offset) allows the UE to find the control region within its RF bandwidth, it can decode. (Note: standard tables usually ensure sufficient BW, but the reasoning is about relative positioning)."
+  },
+  {
+    "category": "nr_rrc_recfg",
+    "type": "Multi-Context",
+    "question": "An 'RRCReconfiguration' message is received with 'reconfigurationWithSync' (Handover). The message includes a dedicated RACH preamble (CFRA) and a C-RNTI. If the UE successfully completes the Random Access to the target cell but fails to send the 'RRCReconfigurationComplete' message due to UL LBT (Listen-Before-Talk) failures in NR-U (Unlicensed), what state transition occurs after T304 expires?",
+    "options": {
+      "option 1": "The UE remains in the target cell and retries sending the Complete message indefinitely.",
+      "option 2": "The UE triggers RRC Connection Re-establishment due to Handover Failure.",
+      "option 3": "The UE reverts to the source cell configuration immediately without declaring failure.",
+      "option 4": "The UE enters RRC_IDLE immediately."
+    },
+    "answer": "option 2: The UE triggers RRC Connection Re-establishment due to Handover Failure.",
+    "explanation": "T304 is the timer for 'Reconfiguration with Sync'. It starts when the command is received and stops when the Random Access is successful *and* (implicitly) the flow proceeds. However, strictly speaking, if T304 expires (e.g., because the procedure took too long or subsequent steps failed), the UE considers the Handover failed and initiates the RRC Connection Re-establishment procedure (selecting the best cell, which could be the source or target)."
+  },
+  {
+    "category": "nr_phy_rs",
+    "type": "Reasoning",
+    "question": "In 5G NR, Phase Tracking Reference Signals (PT-RS) are introduced, which were not present in LTE. Why is PT-RS specifically critical for mmWave (FR2) frequencies and high MCS schemes?",
+    "options": {
+      "option 1": "mmWave frequencies experience high Doppler shifts, and PT-RS corrects frequency offset.",
+      "option 2": "High-frequency oscillators have higher phase noise, which causes Common Phase Error (CPE) rotating the constellation; PT-RS allows tracking and compensating this phase rotation.",
+      "option 3": "PT-RS provides additional power boosting for the data channel in high path-loss environments.",
+      "option 4": "PT-RS acts as a demodulation reference signal for control channels only."
+    },
+    "answer": "option 2: High-frequency oscillators have higher phase noise, which causes Common Phase Error (CPE) rotating the constellation; PT-RS allows tracking and compensating this phase rotation.",
+    "explanation": "As frequency increases, phase noise from local oscillators becomes significant. In OFDM, this manifests as a rotation of the subcarriers (Common Phase Error) and Inter-Carrier Interference (ICI). For high modulation orders (like 64QAM, 256QAM), this rotation destroys decoding capability. PT-RS is sparse in frequency but dense in time to track this rapidly changing phase noise."
+  },
+  {
+    "category": "nr_phy_beam_rs",
+    "type": "Conditioning",
+    "question": "If a UE is configured with CSI-RS for Beam Management (BM) with 'repetition = ON', how should the UE interpret the spatial filter (beam) assumption across the different CSI-RS resources in that set?",
+    "options": {
+      "option 1": "The UE assumes the Network transmits all resources with the *same* Tx beam, allowing the UE to sweep its own Rx beams.",
+      "option 2": "The UE assumes the Network sweeps different Tx beams, so the UE must keep its Rx beam constant.",
+      "option 3": "The UE assumes the resources are for CSI acquisition, not beam management.",
+      "option 4": "The UE sums the power of all resources to calculate a single CQI value."
+    },
+    "answer": "option 1: The UE assumes the Network transmits all resources with the *same* Tx beam, allowing the UE to sweep its own Rx beams.",
+    "explanation": "This is the definition of the 'repetition' parameter in CSI-RS resource sets for Beam Management. 'On' means the gNB fixes its Tx beam, enabling the UE to test different Rx spatial domain filters (P3 procedure). 'Off' means gNB sweeps Tx beams (P2 procedure)."
+  },
+  {
+    "category": "nr_phy_mapping_control",
+    "type": "Multi-Context",
+    "question": "Regarding the mapping of the PDCCH to the resource grid: If the 'searchSpaceType' is configured as 'common' (CSS), but the associated CORESET is configured with a 'duration' of 3 symbols, while the Control Channel Element (CCE) aggregation level requires resources that exceed the available REGs in the first symbol. How does the mapping fill the CORESET?",
+    "options": {
+      "option 1": "It fills all available RBs in the first symbol, then wraps to the second symbol in a time-first mapping manner.",
+      "option 2": "It maps frequency-first within a symbol, effectively filling the entire frequency width of the CORESET for symbol 0 before moving to symbol 1.",
+      "option 3": "It drops the CCEs that do not fit in the first symbol.",
+      "option 4": "Common Search Space is restricted to 1 symbol duration only."
+    },
+    "answer": "option 2: It maps frequency-first within a symbol, effectively filling the entire frequency width of the CORESET for symbol 0 before moving to symbol 1.",
+    "explanation": "According to TS 38.211 Section 7.3.2.2, Resource Element Groups (REGs) are indexed in increasing order of k (frequency) first, then l (time). Therefore, the mapping fills the entire defined bandwidth of the CORESET for the first symbol (l=0) before moving to the next symbol (l=1)."
+  }
+]

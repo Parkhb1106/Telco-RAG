@@ -41,13 +41,13 @@ async def TelcoRAG(query, answer= None, options= None, model_name='gpt-4o-mini')
         print()
 
         # question.get_3GPP_context(k=10, model_name=model_name, validate_flag=False) # 근거 문맥을 3GPP 문서에서 뽑아오는 단계
-        question.get_custom_context(k=10, model_name=model_name, validate_flag=False) # 근거 문맥을 3GPP 문서에서 뽑아오는 단계
-        '''loop = asyncio.get_event_loop()
+        # question.get_custom_context(k=10, model_name=model_name, validate_flag=False) # 근거 문맥을 3GPP 문서에서 뽑아오는 단계
+        loop = asyncio.get_event_loop()
         context_3gpp_future = loop.run_in_executor(None, question.get_custom_context, 10, model_name, False, False)
         online_info = await question.get_online_context(model_name=model_name, validator_flag=False)
         await context_3gpp_future
         for online_parag in online_info:
-            question.context.append(online_parag)'''
+            question.context.append(online_parag)
         
         if answer is not None:
             response, context , _ = check_question(question, answer, options, model_name=model_name) # 컨텍스트와 옵션을 포함한 프롬프트를 만들어 LLM에 답을 생성
@@ -105,6 +105,38 @@ if __name__ == "__main__":
     ap.add_argument("--model-name", type=str, default="Qwen/Qwen3-30B-A3B-Instruct-2507")
     args = ap.parse_args()
 
+    def parse_options(options_str):
+        if options_str is None:
+            return None
+        options_str = options_str.strip()
+        if not options_str:
+            return None
+        try:
+            parsed = ujson.loads(options_str)
+        except Exception:
+            parsed = None
+
+        if isinstance(parsed, dict):
+            items = []
+            for k, v in parsed.items():
+                if v is None or v == "":
+                    items.append(str(k))
+                else:
+                    items.append(f"{k}: {v}")
+            return items
+        if isinstance(parsed, (list, tuple, set)):
+            return list(parsed)
+        if isinstance(parsed, str):
+            return [parsed]
+
+        # Fallback for non-JSON inputs like:
+        # {"option 1: ...", "option 2: ..."}
+        import re
+        extracted = re.findall(r'"([^"]+)"', options_str)
+        if extracted:
+            return extracted
+        return [options_str]
+
     def run_once(query, answer, options):
         if not query:
             return
@@ -144,19 +176,20 @@ if __name__ == "__main__":
 
     print("=== START ===")
     if args.query is not None:
-        run_once(args.query, args.answer, args.options)
+        opts = parse_options(args.options)
+        run_once(args.query, args.answer, opts)
     else:
         while True:
             try:
                 user_query = input("User Query: ").strip()
-                opts = { 
+                '''opts = [
                     "option 1: Direct connection of 3GPP access to 5GC",
                     "option 2: Establishment of user-plane resources over EPC",
                     "option 3: Use of NG-RAN access for all user-plane traffic",
                     "option 4: Exclusive use of a non-3GPP access for user-plane traffic"
-                    }
-                answer = "option 2: Establishment of user-plane resources over EPC"
-                run_once(user_query, answer, opts)
+                    ]
+                answer = "option 2: Establishment of user-plane resources over EPC"'''
+                run_once(user_query, None, None)
             except KeyboardInterrupt:
                 print("\n\ndetect interrupt. program exitted.")
                 break

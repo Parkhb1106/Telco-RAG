@@ -72,8 +72,22 @@ def check_question(question, answer, options, model_name='gpt-4o-mini'):
     - A tuple containing the updated question dictionary and a boolean indicating correctness.
     """
     try:
-        # Extracting options from the question dictionary.
-        options_text = '\n'.join(options)
+        # Normalize options to a list of display strings.
+        if isinstance(options, dict):
+            options_list = []
+            for k, v in options.items():
+                if v is None or v == "":
+                    options_list.append(str(k))
+                else:
+                    options_list.append(f"{k}: {v}")
+        elif isinstance(options, (list, tuple, set)):
+            options_list = list(options)
+        elif isinstance(options, str):
+            options_list = [options]
+        else:
+            options_list = []
+
+        options_text = '\n'.join(options_list)
 
         content = '\n'.join(question.context)
     
@@ -106,12 +120,14 @@ def check_question(question, answer, options, model_name='gpt-4o-mini'):
 
         # Finding and comparing the predicted answer to the actual answer.
         answer_id = find_option_number(predicted_answers_str)
+        real_answer_id = find_option_number(answer)
 
-        if find_option_number(answer) == answer_id:
+        if real_answer_id == answer_id:
             print("Correct\n")
             return  True, f"Option {answer_id}", syst_prompt
         else:
             print("Wrong\n")
+            print(f"The chosen one is {answer_id}, but the answer is {real_answer_id}")
             return  False, f"Option {answer_id}", syst_prompt
     except Exception as e:
         # Error handling to catch and report errors more effectively.
