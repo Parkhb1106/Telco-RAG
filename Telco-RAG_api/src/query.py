@@ -244,7 +244,8 @@ class Query:
         return self.context
 
     @staticmethod
-    def fusion_context(semantic_search, keyword_search, k=10, semantic_weight=1.0, keyword_weight=1.0, rrf_k=60):
+    def fusion_context(semantic_search, keyword_search, k=20, semantic_weight=1.0, keyword_weight=1.0, rrf_k=60, query=None, model_name='gpt-4o-mini', llm_rerank_top=8):
+        
         def _ensure_list(value):
             if value is None:
                 return []
@@ -302,6 +303,40 @@ class Query:
 
         if k is not None:
             ranked = ranked[:k]
+
+        if query and ranked:
+            rerank_n = min(llm_rerank_top or 0, len(ranked))
+            if rerank_n > 1:
+                passages = []
+                for i, (key, _) in enumerate(ranked[:rerank_n], start=1):
+                    body = _strip_retrieval_prefix(texts[key])
+                    passages.append(f"{i}) {body}")
+                prompt = (
+                    "You are a reranker. Rank the passages by relevance to the question. "
+                    "Return JSON only in the format: {\"ranking\":[...]}.\n"
+                    f"Question: {query}\n"
+                    "Passages:\n" + "\n".join(passages)
+                )
+                try:
+                    result = submit_prompt_flex(prompt, model=model_name, output_json=True)
+                    parsed = json.loads(result)
+                    order = parsed.get("ranking", [])
+                    if isinstance(order, list) and len(order) == rerank_n:
+                        idxs = []
+                        for x in order:
+                            try:
+                                idx = int(x)
+                            except Exception:
+                                idx = None
+                            if idx is None or idx < 1 or idx > rerank_n:
+                                idxs = []
+                                break
+                            idxs.append(idx - 1)
+                        if idxs and len(set(idxs)) == rerank_n:
+                            reranked = [ranked[i] for i in idxs]
+                            ranked = reranked + ranked[rerank_n:]
+                except Exception:
+                    pass
 
         fused = []
         for i, (key, _) in enumerate(ranked, start=1):
