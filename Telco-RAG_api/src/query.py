@@ -243,7 +243,71 @@ class Query:
             self.get_question_context_faiss(batch=embedded_docs, k=k, use_context=True)
         return self.context
 
-    def fusion(semantic_search, keyword_search, ...):
+    @staticmethod
+    def fusion_context(semantic_search, keyword_search, k=10, semantic_weight=1.0, keyword_weight=1.0, rrf_k=60):
+        def _ensure_list(value):
+            if value is None:
+                return []
+            if isinstance(value, str):
+                return [value]
+            return list(value)
+
+        def _extract_payload(text):
+            parts = text.split("...")
+            if len(parts) >= 3:
+                payload = parts[1].strip()
+                if payload:
+                    return payload
+            return text.strip()
+
+        def _strip_retrieval_prefix(text):
+            idx = text.find("Retrieval")
+            if idx == -1:
+                return text.lstrip()
+            nl = text.find("\n", idx)
+            if nl == -1:
+                return text[idx:].lstrip()
+            return text[nl + 1:].lstrip()
+
+        semantic_list = _ensure_list(semantic_search)
+        keyword_list = _ensure_list(keyword_search)
+
+        scores = {}
+        texts = {}
+        order_hint = {}
+
+        for rank, text in enumerate(semantic_list, start=1):
+            key = _extract_payload(text)
+            score = semantic_weight / (rrf_k + rank)
+            scores[key] = scores.get(key, 0.0) + score
+            if key not in texts or len(text) > len(texts[key]):
+                texts[key] = text
+            order_hint.setdefault(key, rank)
+
+        for rank, text in enumerate(keyword_list, start=1):
+            key = _extract_payload(text)
+            score = keyword_weight / (rrf_k + rank)
+            scores[key] = scores.get(key, 0.0) + score
+            if key not in texts or len(text) > len(texts[key]):
+                texts[key] = text
+            order_hint.setdefault(key, len(semantic_list) + rank)
+
+        if not scores:
+            return []
+
+        ranked = sorted(
+            scores.items(),
+            key=lambda item: (-item[1], order_hint.get(item[0], 1_000_000))
+        )
+
+        if k is not None:
+            ranked = ranked[:k]
+
+        fused = []
+        for i, (key, _) in enumerate(ranked, start=1):
+            body = _strip_retrieval_prefix(texts[key])
+            fused.append(f"\nRetrieval {i}:\n{body}")
+        return fused
 
     async def get_online_context(self, model_name='gpt-4o-mini', validator_flag= True, options=None):
         if options is None:
