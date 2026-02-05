@@ -1,17 +1,5 @@
 [
   {
-    "question": "In the context of 5GS Mobility Management (5GMM), if a UE initiates a Registration procedure and receives a REGISTRATION REJECT message with 5GMM cause value #15 ('No suitable cells in tracking area'), how must the UE update its internal lists regarding the current Tracking Area (TA)? [TS 24.501]",
-    "options": {
-      "option 1": "The UE must add the TA to the 'forbidden tracking areas for roaming' list and increment the registration attempt counter.",
-      "option 2": "The UE must add the TA to the '5GS forbidden tracking areas for regional provision of service' list and enter state 5GMM-DEREGISTERED.LIMITED-SERVICE.",
-      "option 3": "The UE must add the TA to the 'forbidden tracking areas for roaming' list and immediately trigger a cell selection process.",
-      "option 4": "The UE must add the TA to the '5GS forbidden tracking areas for regional provision of service' list but remain in 5GMM-REGISTERED-INITIATED state to retry on a different PLMN."
-    },
-    "answer": "option 2: The UE must add the TA to the '5GS forbidden tracking areas for regional provision of service' list and enter state 5GMM-DEREGISTERED.LIMITED-SERVICE.",
-    "explanation": "According to TS 24.501, when cause #15 is received, the UE adds the TA to the list of '5GS forbidden tracking areas for regional provision of service' and transitions to 5GMM-DEREGISTERED.LIMITED-SERVICE, enabling it to search for a suitable cell in another TA.",
-    "category": "5gs_nas_spec"
-  },
-  {
     "question": "Considering a UE in 5GMM-CONNECTED mode over 3GPP access, if the network sends a SERVICE REJECT message in response to a Service Request with 5GMM cause #10 ('Implicitly deregistered'), what is the immediate procedural requirement for the UE? [TS 24.501]",
     "options": {
       "option 1": "The UE must delete its 5G-GUTI, reset the registration attempt counter, and enter state 5GMM-DEREGISTERED.",
@@ -24,18 +12,6 @@
     "category": "5gs_nas_spec"
   },
   {
-    "question": "In a scenario where a UE requests a PDU Session Establishment with 'Request type' set to 'initial emergency request' but the AMF determines that the UE is in a PLMN where emergency services are not allowed for this subscriber, which specific 5GSM cause code implies the rejection is due to subscription limitations rather than network congestion? [TS 24.501]",
-    "options": {
-      "option 1": "5GSM cause #26 'Insufficient resources'",
-      "option 2": "5GSM cause #29 'User authentication failed'",
-      "option 3": "5GSM cause #92 'Insufficient resources for specific slice and DNN'",
-      "option 4": "5GSM cause #32 'Service option not supported'"
-    },
-    "answer": "option 1: 5GSM cause #26 'Insufficient resources'",
-    "explanation": "This is a trick in the spec reasoning. While #29 or #32 seem logical, TS 24.501 specifies that for emergency services, if the network cannot support the request due to policy/subscription validation failing during the emergency attempt, it often defaults to generic resource or option reject causes or specific emergency rejection flows depending on the V-PLMN policy. However, strictly speaking, if authentication fails specifically, #29 is used. But if it is purely 'not allowed' in that PLMN without auth failure, the network often uses cause #7 (5GMM) or directs the UE to limited service. (Note: In strict 5GSM context, if the DNN is invalid, #27 is used). *Self-correction for rigorous 5GSM context*: If the specific emergency DNN is not supported, cause #27 'Missing or unknown DNN' or #32 is used.",
-    "category": "5gs_nas_spec"
-  },
-  {
     "question": "A UE performing a Tracking Area Update (TAU) in EPS receives a TRACKING AREA UPDATE REJECT with EMM cause #15 ('No suitable cells in tracking area'). Under the condition that the UE is in a V-PLMN (Roaming), how does this specific cause code affect the UE's PLMN selection process? [TS 24.301]",
     "options": {
       "option 1": "The UE enters EMM-DEREGISTERED and performs a PLMN selection, treating the current V-PLMN as forbidden.",
@@ -45,18 +21,6 @@
     },
     "answer": "option 2: The UE adds the current TA to the 'forbidden tracking areas for roaming' list and searches for a suitable cell within the same V-PLMN.",
     "explanation": "Cause #15 results in the TA being added to the forbidden list for roaming. It does not forbid the entire PLMN (which would be cause #11) or the LA (cause #12). The UE stays in the PLMN but looks for a different TA.",
-    "category": "eps_nas_spec"
-  },
-  {
-    "question": "If a UE initiates an ESM procedure for a Dedicated EPS Bearer Context Activation and receives a rejection because the maximum number of EPS bearers (8) has already been reached, but the UE requires this bearer for an emergency call, what reasoning determines the ME's behavior? [TS 24.301]",
-    "options": {
-      "option 1": "The ME locally deactivates a non-emergency bearer with the lowest ARP to make space for the emergency bearer.",
-      "option 2": "The ME waits for the network to tear down a bearer; the UE cannot initiate deactivation locally for this purpose.",
-      "option 3": "The ME sends a BEARER RESOURCE MODIFICATION REQUEST to upgrade an existing bearer to emergency QoS.",
-      "option 4": "The ME aborts the emergency call attempt and notifies the upper layers."
-    },
-    "answer": "option 1: The ME locally deactivates a non-emergency bearer with the lowest ARP to make space for the emergency bearer.",
-    "explanation": "Standard behavior for emergency priority: if the limit is reached, the UE logic (and network logic) prioritizes the emergency bearer. The UE can locally release a non-emergency bearer to allow the emergency bearer context to be established.",
     "category": "eps_nas_spec"
   },
   {
@@ -93,18 +57,6 @@
     },
     "answer": "option 1: The UE reverts to the source cell configuration and sends RRCConnectionReestablishmentRequest.",
     "explanation": "Expiry of T304 denotes Handover Failure. The UE must revert to the configuration used in the source cell (prior to the command) and initiate the connection re-establishment procedure (sending `RRCConnectionReestablishmentRequest`) to try to recover the link.",
-    "category": "lte_rrc_spec"
-  },
-  {
-    "question": "Regarding the SystemInformationBlockType1 (SIB1) scheduling in LTE, if a UE detects a specific subframe pattern but fails to decode SIB1, which multi-context checking regarding TDD/FDD configuration and repetition periodicity helps the UE locate the next SIB1 transmission? [TS 36.331]",
-    "options": {
-      "option 1": "SIB1 is scheduled on subframe #5 of every radio frame for both FDD and TDD.",
-      "option 2": "SIB1 is scheduled with a periodicity of 80ms, repeated on subframe #5 of every other frame.",
-      "option 3": "SIB1 is scheduled with a periodicity of 20ms in subframe #5, but repetitions depend on the SFN.",
-      "option 4": "SIB1 is fixed in subframe #5 of every even SFN frame, repeating in every odd SFN frame (20ms total cycle)."
-    },
-    "answer": "option 4: SIB1 is fixed in subframe #5 of every even SFN frame, repeating in every odd SFN frame (20ms total cycle).",
-    "explanation": "SIB1 uses a fixed schedule with a periodicity of 80 ms and repetitions made within that 80 ms period. Specifically, repetitions occur at SFN satisfying (SFN mod 2 = 0) in subframe #5. Effectively, it appears every 20ms (frame n, n+2, n+4...).",
     "category": "lte_rrc_spec"
   },
   {
@@ -358,18 +310,6 @@
     "answer": "option 2: SIB1 (via DL-SCH) maps to PDSCH; MIB (via BCH) maps to PBCH.",
     "explanation": "This tests the fundamental architecture. MIB is part of the SSB structure and rides on the Physical Broadcast Channel (PBCH). SIB1 is a large data block, so it is handled like normal data: DL-SCH -> PDSCH, though scheduled by a specific common RNTI (SI-RNTI).",
     "category": "nr_phy_mapping"
-  },
-  {
-    "question": "A UE monitors PDCCH for DCI Format 1_0 in the Common Search Space. If the frequency domain resource assignment field indicates all 1s, what specific RNTI usage and reasoning explains this value? [ShareTechnote/3GPP]",
-    "options": {
-      "option 1": "C-RNTI; it indicates a full-bandwidth allocation.",
-      "option 2": "SI-RNTI; it is a reserved value indicating SIB1 decoding information is in the MIB.",
-      "option 3": "RA-RNTI; it indicates the RAR is valid for all preambles.",
-      "option 4": "SI-RNTI; it indicates that the System Information Block is not broadcast but must be requested."
-    },
-    "answer": "option 1: C-RNTI; it indicates a full-bandwidth allocation.",
-    "explanation": "*Correction/Refinement*: Actually, for DCI 1_0 with CRC scrambled by SI-RNTI, `all 1s` in FDRA is not standard. However, checking RA-RNTI behavior: If FDRA is all 1s? No. Let's look at *C-RNTI* behavior. Wait, strictly speaking, DCI 1_0 with SI-RNTI uses specific FDRA. The question might be aiming at a trick or a specific corner case. Let's re-evaluate based on DCI 1_0 `VRB-to-PRB mapping`. If CRC is P-RNTI, and FDRA is all 1s? No. \n\n*Self-Correction*: Let's switch to a cleaner conditioning question for DCI.\n\n**Revised Question**: 'When a UE decodes DCI Format 1_0 with CRC scrambled by P-RNTI (Paging), and the `Short Message Indicator` field is set to `10`, what is the conditional behavior of the UE?'\n\n**Revised Answer**: 'The UE reads the Short Message included in the DCI and does NOT decode PDSCH.' (Reasoning: Bit field 10 means Short Message only. 01 means PDSCH only. 11 means both).",
-    "category": "nr_phy_control"
   },
   {
     "question": "If a UE is configured with a CORESET having `precoderGranularity` set to `sameAsREG-bundle`, how does this condition affect the channel estimation strategy for the PDCCH compared to `allContiguousRB`? [ShareTechnote/3GPP]",

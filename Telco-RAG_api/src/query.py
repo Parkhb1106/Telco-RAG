@@ -243,7 +243,7 @@ class Query:
             self.get_question_context_faiss(batch=embedded_docs, k=k, use_context=True)
         return self.context
 
-    def fusion_context(self, semantic_search, keyword_search, k=10, semantic_weight=1.2, keyword_weight=1.0, rrf_k=60, llm_rerank_top=20, query=None, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
+    def fusion_context(self, semantic_search, keyword_search, k=10, semantic_weight=1.2, keyword_weight=1.0, rrf_k=60, llm_rerank_head=4, llm_rerank_tail=20, query=None, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
         
         def _ensure_list(value):
             if value is None:
@@ -303,10 +303,26 @@ class Query:
         )
 
         if query and ranked:
-            rerank_n = min(llm_rerank_top or 0, len(ranked))
+            try:
+                head = int(llm_rerank_head or 1)
+                tail = int(llm_rerank_tail or 0)
+            except Exception:
+                head, tail = 1, 0
+
+            if head < 1:
+                head = 1
+            if tail > len(ranked):
+                tail = len(ranked)
+
+            if tail >= head:
+                rerank_slice = ranked[head - 1:tail]
+            else:
+                rerank_slice = []
+
+            rerank_n = len(rerank_slice)
             if rerank_n > 1:
                 passages = []
-                for i, (key, _) in enumerate(ranked[:rerank_n], start=1):
+                for i, (key, _) in enumerate(rerank_slice, start=1):
                     body = _strip_retrieval_prefix(texts[key])
                     passages.append(f"{i}) {body}")
                 prompt = (
@@ -331,8 +347,8 @@ class Query:
                                 break
                             idxs.append(idx - 1)
                         if idxs and len(set(idxs)) == rerank_n:
-                            reranked = [ranked[i] for i in idxs]
-                            ranked = reranked + ranked[rerank_n:]
+                            reranked = [rerank_slice[i] for i in idxs]
+                            ranked = ranked[:head - 1] + reranked + ranked[tail:]
                 except Exception:
                     pass
         

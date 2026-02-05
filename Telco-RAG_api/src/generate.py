@@ -9,14 +9,14 @@ def generate(question, model_name):
         # Constructing the content context from the question object
         content = '\n'.join(question.context)
         prompt = f"""
-Please answer the following question:
-{question.query}
+        Please answer the following question:
+        {question.query}
 
-Considering the following context:
-{content}
+        Considering the following context:
+        {content}
 
-Please answer the following question, add between paranthesis the retrieval(e.g. Retrieval 3) that you used for each eleement of your reasoning:
-{question.question}
+        Please answer the following question, add between paranthesis the retrieval(e.g. Retrieval 3) that you used for each eleement of your reasoning:
+        {question.question}
         """
         print(prompt)
         logging.info("Generated system prompt for OpenAI completion.")
