@@ -243,8 +243,7 @@ class Query:
             self.get_question_context_faiss(batch=embedded_docs, k=k, use_context=True)
         return self.context
 
-    @staticmethod
-    def fusion_context(semantic_search, keyword_search, k=20, semantic_weight=1.0, keyword_weight=1.0, rrf_k=60, query=None, model_name='gpt-4o-mini', llm_rerank_top=8):
+    def fusion_context(self, semantic_search, keyword_search, k=10, semantic_weight=1.2, keyword_weight=1.0, rrf_k=60, llm_rerank_top=20, query=None, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
         
         def _ensure_list(value):
             if value is None:
@@ -269,6 +268,8 @@ class Query:
             if nl == -1:
                 return text[idx:].lstrip()
             return text[nl + 1:].lstrip()
+        
+        query = self.question if query is None else query
 
         semantic_list = _ensure_list(semantic_search)
         keyword_list = _ensure_list(keyword_search)
@@ -301,9 +302,6 @@ class Query:
             key=lambda item: (-item[1], order_hint.get(item[0], 1_000_000))
         )
 
-        if k is not None:
-            ranked = ranked[:k]
-
         if query and ranked:
             rerank_n = min(llm_rerank_top or 0, len(ranked))
             if rerank_n > 1:
@@ -314,7 +312,7 @@ class Query:
                 prompt = (
                     "You are a reranker. Rank the passages by relevance to the question. "
                     "Return JSON only in the format: {\"ranking\":[...]}.\n"
-                    f"Question: {query}\n"
+                    f"Question: {query}\n\n"
                     "Passages:\n" + "\n".join(passages)
                 )
                 try:
@@ -337,12 +335,20 @@ class Query:
                             ranked = reranked + ranked[rerank_n:]
                 except Exception:
                     pass
+        
+        if k is not None:
+            ranked = ranked[:k]
 
         fused = []
         for i, (key, _) in enumerate(ranked, start=1):
             body = _strip_retrieval_prefix(texts[key])
             fused.append(f"\nRetrieval {i}:\n{body}")
-        return fused
+        
+        self.context = fused
+            
+        if validate_flag:
+            self.validate_context(model_name=model_name, k=k, UI_flag=UI_flag)
+
 
     async def get_online_context(self, model_name='gpt-4o-mini', validator_flag= True, options=None):
         if options is None:
