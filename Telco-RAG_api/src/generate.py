@@ -9,6 +9,13 @@ def generate(question, model_name):
         # Constructing the content context from the question object
         content = '\n'.join(question.context)
         prompt = f"""
+        You are a telecom domain expert.
+        
+        Rules:
+        1) Answer ONLY using the provided Context.
+        2) If the Context does not contain enough info, output: "unknown".
+        3) Be precise with conditions (IF/THEN/EXCEPT).
+        
         Please answer the following question:
         {question.query}
 
@@ -92,6 +99,13 @@ def check_question(question, answer, options, model_name='gpt-4o-mini'):
         content = '\n'.join(question.context)
     
         syst_prompt = f"""
+        You are a telecom domain expert.
+        
+        Rules:
+        1) Answer ONLY using the provided Context.
+        2) If the Context does not contain enough info, output: "Answer unknown option 0".
+        3) Be precise with conditions (IF/THEN/EXCEPT).
+        
         Please provide the answers to the following multiple choice question.
         {question.query}
         
