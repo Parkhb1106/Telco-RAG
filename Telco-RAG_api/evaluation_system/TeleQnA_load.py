@@ -101,7 +101,6 @@ def main() -> None:
     ap.add_argument("--dataset", default="netop/TeleQnA", help="HF dataset name (default: netop/TeleQnA)")
     ap.add_argument("--split", default="test", help="HF split (TeleQnA commonly exposes 'train')")
     ap.add_argument("--out-dir", default="evaluation_system/inputs", help="Output directory")
-    ap.add_argument("--sleep", type=float, default=0.0, help="Optional sleep seconds per sample (rate-limit / thermal)")
     args = ap.parse_args()
 
     out_dir = Path(args.out_dir)
@@ -157,9 +156,27 @@ def main() -> None:
                 "explanation": explanation
             }
             f_out.write(json.dumps(row, ensure_ascii=False, indent=4) + "\n")
-
-            if args.sleep > 0:
-                time.sleep(args.sleep)
+            
+            if i + 1 == len(ds):
+                f_out.flush()
+                decoder = json.JSONDecoder()
+                with dataset_raw_path.open("r", encoding="utf-8") as f_in, dataset_path.open("w", encoding="utf-8") as f_json:
+                    text = f_in.read()
+                    pos = 0
+                    n = len(text)
+                    first = True
+                    f_json.write("[\n")
+                    while pos < n:
+                        while pos < n and text[pos].isspace():
+                            pos += 1
+                        if pos >= n:
+                            break
+                        obj, pos = decoder.raw_decode(text, pos)
+                        if not first:
+                            f_json.write(",\n")
+                        f_json.write(json.dumps(obj, ensure_ascii=False, indent=4))
+                        first = False
+                    f_json.write("\n]\n")
 
     elapsed = time.time() - started
 
