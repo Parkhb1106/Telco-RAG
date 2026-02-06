@@ -2,19 +2,28 @@
 # -*- coding: utf-8 -*-
 
 """
-MCQ evaluator for a callable pipeline like:
+MCQ evaluator for generated responses like:
 
-from pipeline_offline import TelcoRAG
-response, context = TelcoRAG(
-    query=user_query,
-    answer=None,
-    options=user_options,
-    model_name='Qwen/Qwen3-30B-A3B-Instruct-2507'
-)
+{
+    "id": 0,
+    "category": "1. RRC (Radio Resource Control) 기초 및 상태",
+    "question": "RRC (Radio Resource Control) 계층의 주요 역할 3가지를 가장 올바르게 나열한 것은 무엇인가요?",
+    "options": {
+        "option 1": "패킷 스케줄링, HARQ 재전송, 변조 및 코딩(MCS) 설정",
+        "option 2": "시스템 정보 방송, RRC 연결 제어, 무선 베어러(RB) 설정 및 해제",
+        "option 3": "IP 라우팅, 가입자 과금 데이터 수집, 세션 관리",
+        "option 4": "데이터 압축, 암호화(Ciphering), 헤더 압축(ROHC)"
+    },
+    "answer": "option 2: 시스템 정보 방송, RRC 연결 제어, 무선 베어러(RB) 설정 및 해제",
+    "explanation": "RRC의 핵심 역할은 시스템 정보(SI) 방송, 페이징, RRC 연결 설정/해제/관리, 무선 베어러(SRB/DRB) 설정, 그리고 핸드오버와 같은 이동성 제어입니다.",
+    "response": "Answer option 2",
+    "context": "The retrieved context provided to the LLM is:\n\nRetrieval 1:\n...The major role of RRC is to control(configure) all the Radio Resources (PHY, MAC, RLC, PDCP) to make it possible to communicate between UE and the base station (e.g, gNB, eNB, NB, BTS etc). In this page, I will give you the brief introduction to RRC in NR. In fact, RRC is a huge topic because it eventually get involved in whole protocol stack. So it would be difficult to describe the wholes details of RRC in single page. So I would just talk about overall RRC structure / functions in this page and for furth...\nThis retrieval is performed from the document 3GPP data/web/output_cleaned/www_sharetechnote_com_html_5G_5G_RRC_Overview_html_b5941853_cleaned.txt.\n\n\nRetrieval 2:\n...The resulting implementation of this control mechanism is called RRC (Radio Resource Control). Another central role of RRC within each communicating party (i.e, within UE and Network) is to work as a control center for all of the lower layers within each system. The collection of all the lower layers within UE or basestation is called 'Radio Resource' (i.e, resources required to make radio communication possible)....\nThis retrieval is performed from the document 3GPP data/web/output_cleaned/www_sharetechnote_com_html_5G_5G_RRC_Overview_html_b5941853_cleaned.txt.\n\n\nRetrieval 3:\n...4.3.1 Services provided to upper layers\n\nThe RRC protocol offers the following services to upper layers:\n\nBroadcast of common control information;\n\nNotification of UEs in RRC_IDLE, e.g. about a mobile terminating call;\n\nNotification of UEs about ETWS and/or CMAS;\n\nTransfer of dedicated signalling;\n\nBroadcast of positioning assistance data;\n\nTransfer of application layer measurement configuration and reporting....\nThis retrieval is performed from the document 3GPP 38331-i80.docx.\n\n\nRetrieval 4:\n...4.4 Functions\n\nThe RRC protocol includes the following main functions:\n\nBroadcast of system information:\n\nIncluding NAS common information;\n\nInformation applicable for UEs in RRC_IDLE and RRC_INACTIVE (e.g. cell (re-)selection parameters, neighbouring cell information) and information (also) applicable for UEs in RRC_CONNECTED (e.g. common channel configuration information);\n\nIncluding ETWS notification, CMAS notification;\n\nIncluding positioning assistance data.\n\nRRC connection control:\n\nPaging;...\nThis retrieval is performed from the document 3GPP 38331-i80.docx.\n\n\nRetrieval 5:\n...4.4 Functions\n\nThe RRC protocol includes the following main functions:\n\nBroadcast of system information:\n\nIncluding NAS common information;\n\nInformation applicable for UEs in RRC_IDLE, e.g. cell (re-)selection parameters, neighbouring cell information and information (also) applicable for UEs in RRC_CONNECTED, e.g. common channel configuration information;\n\nIncluding ETWS notification, CMAS notification (not applicable for NB-IoT);\n\nIncluding positioning assistance data.\n\nRRC connection control:\n\nPaging;...\nThis retrieval is performed from the document 3GPP 36331-i80.docx.\n\n\nRetrieval 6:\n...4.3.1 Services provided to upper layers\n\nThe RRC protocol offers the following services to upper layers:\n\nBroadcast of common control information;\n\nBroadcast of positioning assistance data;\n\nNotification of UEs in RRC_IDLE and RRC_INACTIVE, e.g. about a terminating call, for ETWS, for CMAS;\n\nTransfer of dedicated control information, i.e. information for one specific UE....\nThis retrieval is performed from the document 3GPP 36331-i80.docx.\n\n\nRetrieval 7:\n...radio bearers that are no longer needed or are being replaced. This includes handling of: (dual active protocol stack scenarios), RLC entity re-establishment PDCP data recovery in certain handover or reconfiguration-with-sync scenarios, Security key updates for ciphering and integrity protection. Another major purpose of RRC Reconfiguration is to manage the UEs measurement activities: measurement configurations (e.g., events to trigger cell reselection or handover, reporting criteria, thresholds)....\nThis retrieval is performed from the document 3GPP data/web/output_cleaned/www_sharetechnote_com_html_5G_5G_RRC_Reconfiguration_html_40e14e04_cleaned.txt.\n\n\nRetrieval 8:\n...Radio Link Control (RLC) Layer: The RLC layer settings define how data is segmented, reassembled, and retransmitted, ensuring reliability in data delivery. Service Data Adaptation Protocol (SDAP) Layer: This layer maps the data flows (QoS flows) to the appropriate DRBs, ensuring that QoS requirements are met for each data flow. The measConfig Information Element (IE) is responsible for defining the measurement configurations that the User Equipment (UE) uses to monitor and report network conditions....\nThis retrieval is performed from the document 3GPP data/web/output_cleaned/www_sharetechnote_com_html_5G_5G_RRC_Reconfiguration_html_40e14e04_cleaned.txt.\n\n\nRetrieval 9:\n...4.1 Introduction\n\nThis specification is organised as follows:\n\nclause 4.2 describes the RRC protocol model;\n\nclause 4.3 specifies the services provided to upper layers as well as the services expected from lower layers;\n\nclause 4.4 lists the RRC functions;\n\nclause 5 specifies RRC procedures, including UE state transitions;\n\nclause 6 specifies the RRC messages in ASN.1 and description;\n\nclause 7 specifies the variables (including protocol timers and constants) and counters to be used by the UE;...\nThis retrieval is performed from the document 3GPP 38331-i80.docx.\n\n\nRetrieval 10:\n...4.3.2 Services expected from lower layers\n\nIn brief, the following are the main services that RRC expects from lower layers:\n\nPDCP: integrity protection and ciphering;\n\nRLC: reliable and in-sequence transfer of information, without introducing duplicates and with support for segmentation and concatenation....\nThis retrieval is performed from the document 3GPP 36331-i80.docx.\n",
+    "error": null
+}
 
 Outputs:
-- <out_dir>/mcq_details.jsonl
-- <out_dir>/mcq_summary.json
+- <out_dir>/evaluation.jsonl
+- <out_dir>/evaluation_summary.json
 """
 
 from __future__ import annotations
@@ -159,39 +168,38 @@ def safe_div(a: int, b: int) -> float:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    default_dataset_path = Path(__file__).resolve().parent / "inputs" / "MCQ.json"
-    ap.add_argument("--dataset", default=str(default_dataset_path), help="Local MCQ.json path")
+    default_response_path = Path(__file__).resolve().parent / "outputs" / "mcq"
+    ap.add_argument("--response", default=str(default_response_path), help="Local MCQ response path")
     ap.add_argument("--limit", type=int, default=0, help="Limit number of questions (0 = all)")
     ap.add_argument("--shuffle", action="store_true", help="Shuffle before slicing limit")
     ap.add_argument("--seed", type=int, default=42, help="Seed for shuffle")
-    ap.add_argument("--model-name", default="Qwen/Qwen3-30B-A3B-Instruct-2507", help="Passed into TelcoRAG(model_name=...)")
     ap.add_argument("--out-dir", default="evaluation_system/outputs/mcq", help="Output directory")
-    ap.add_argument("--sleep", type=float, default=0.0, help="Optional sleep seconds per sample (rate-limit / thermal)")
     args = ap.parse_args()
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    details_path = out_dir / "mcq_details.jsonl"
-    summary_path = out_dir / "mcq_summary.json"
+    details_path = out_dir / "evaluation.jsonl"
+    summary_path = out_dir / "evaluation_summary.json"
 
     # Load local dataset (JSON list of examples)
-    dataset_path = Path(args.dataset)
-    with dataset_path.open("r", encoding="utf-8") as f_in:
+    response_dir = Path(args.response)
+    response_path = response_dir / "response.jsonl"
+    response_summary_path = response_dir / "response_summary.json"
+    with response_summary_path.open("r", encoding="utf-8") as f_in:
+        summary_data = json.load(f_in)
+    llm_name = summary_data.get("llm", "unknown")
+    dataset_path = summary_data.get("dataset", "unknown")
+    
+    with response_path.open("r", encoding="utf-8") as f_in:
         ds = json.load(f_in)
     if not isinstance(ds, list):
-        raise ValueError(f"Expected list in {dataset_path}, got {type(ds).__name__}")
-
-    if args.shuffle:
-        rng = random.Random(args.seed)
-        rng.shuffle(ds)
-
-    if args.limit and args.limit > 0:
-        ds = ds[: min(args.limit, len(ds))]
+        raise ValueError(f"Expected list in {response_path}, got {type(ds).__name__}")
 
     overall = Counters()
     by_subject: Dict[str, Counters] = {}
 
     started = time.time()
+    # details_path가 json이 아닌 jsonl인 경우로 코드 수정 필요
     with details_path.open("w", encoding="utf-8") as f_out:
         for i, ex in enumerate(tqdm(ds, desc="MCQ", total=len(ds))):
             # TeleQnA uses lower-case keys in example shown on dataset card :contentReference[oaicite:3]{index=3}
@@ -212,16 +220,10 @@ def main() -> None:
             raw_resp_text = ""
             context: Any = None
             err: Optional[str] = None
-            try:
-                resp, context = asyncio.run(TelcoRAG(
-                    query=q,
-                    answer=None,
-                    options=options_dict,  # normalized dict ("option N": text)
-                    model_name=args.model_name,
-                ))
-                raw_resp_text = "" if resp is None else str(resp)
-            except Exception as e:
-                err = f"{type(e).__name__}: {e}"
+            
+            raw_resp_text = ex.get("response", None)
+            context = ex.get("context", None)
+            err = ex.get("error", None)
 
             pred_idx = parse_pred_index(raw_resp_text, max_opt) if not err else None
             is_correct = (pred_idx == gold_idx) if (pred_idx is not None and gold_idx is not None) else False
@@ -238,19 +240,19 @@ def main() -> None:
 
             # Write detail row
             row = {
-                "id": i,
+                "num": i,
                 "question": q,
                 "options": options_dict,
                 "gold": {
-                    "answer_index_0based": ex.get("answer", None),
-                    "gold_index_1based": gold_idx,
+                    "answer": ex.get("answer", None),
+                    "answer_index": gold_idx,
                 },
                 "pred": {
-                    "raw_response": raw_resp_text,
-                    "pred_index_1based": pred_idx,
+                    "response": raw_resp_text,
+                    "response_index": pred_idx,
                 },
                 "correct": is_correct,
-                "subject": subject,
+                "category": subject,
                 "explanation": explanation,
                 "context": context,
                 "error": err,
@@ -262,13 +264,13 @@ def main() -> None:
 
     elapsed = time.time() - started
     summary = {
-        "dataset": args.dataset,
-        "model_name": args.model_name,
-        "n_evaluated": overall.total,
-        "accuracy": safe_div(overall.correct, overall.total),
-        "correct": overall.correct,
+        "dataset": dataset_path,
+        "llm": llm_name,
         "elapsed_sec": elapsed,
-        "accuracy_by_category": {
+        "count": overall.total,
+        "correct": overall.correct,
+        "accuracy": safe_div(overall.correct, overall.total),
+        "by_category": {
             k: {
                 "n": v.total,
                 "correct": v.correct,
@@ -277,15 +279,15 @@ def main() -> None:
             for k, v in sorted(by_subject.items(), key=lambda kv: kv[0])
         },
         "outputs": {
-            "details_jsonl": str(details_path),
-            "summary_json": str(summary_path),
+            "evaluation_jsonl": str(details_path),
+            "evaluation_summary_json": str(summary_path),
         },
     }
 
     summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print("\n=== DONE ===")
-    print(f"- accuracy: {summary['accuracy']:.4f} ({overall.correct}/{overall.total})")
+    print(f"- accuracy: {summary['accuracy']} ({overall.correct}/{overall.total})")
     print(f"- details:  {details_path}")
     print(f"- summary:   {summary_path}")
 
