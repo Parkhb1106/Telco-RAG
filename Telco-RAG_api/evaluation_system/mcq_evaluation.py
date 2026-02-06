@@ -163,6 +163,55 @@ def safe_div(a: int, b: int) -> float:
 
 
 # ----------------------------
+# Data loading
+# ----------------------------
+
+def load_json_or_jsonl(path: Path) -> List[Dict[str, Any]]:
+    """
+    Load either:
+      - a JSON list
+      - a JSONL / concatenated-JSON file (one or more objects)
+    Returns a list of dicts.
+    """
+    text = path.read_text(encoding="utf-8").strip()
+    if not text:
+        return []
+
+    # First try a normal JSON load
+    try:
+        obj = json.loads(text)
+        if isinstance(obj, list):
+            return obj
+        if isinstance(obj, dict):
+            return [obj]
+    except json.JSONDecodeError:
+        pass
+
+    # Fallback: stream-decode concatenated JSON values
+    decoder = json.JSONDecoder()
+    idx = 0
+    items: List[Dict[str, Any]] = []
+    length = len(text)
+    while idx < length:
+        # Skip whitespace
+        while idx < length and text[idx].isspace():
+            idx += 1
+        if idx >= length:
+            break
+        obj, next_idx = decoder.raw_decode(text, idx)
+        if isinstance(obj, list):
+            items.extend(obj)
+        elif isinstance(obj, dict):
+            items.append(obj)
+        else:
+            # Ignore non-dict/list entries
+            pass
+        idx = next_idx
+
+    return items
+
+
+# ----------------------------
 # Main
 # ----------------------------
 
@@ -174,6 +223,7 @@ def main() -> None:
     ap.add_argument("--shuffle", action="store_true", help="Shuffle before slicing limit")
     ap.add_argument("--seed", type=int, default=42, help="Seed for shuffle")
     ap.add_argument("--out-dir", default="evaluation_system/outputs/mcq", help="Output directory")
+    ap.add_argument("--sleep", type=float, default=0.0, help="Optional sleep seconds per sample")
     args = ap.parse_args()
 
     out_dir = Path(args.out_dir)
@@ -190,8 +240,7 @@ def main() -> None:
     llm_name = summary_data.get("llm", "unknown")
     dataset_path = summary_data.get("dataset", "unknown")
     
-    with response_path.open("r", encoding="utf-8") as f_in:
-        ds = json.load(f_in)
+    ds = load_json_or_jsonl(response_path)
     if not isinstance(ds, list):
         raise ValueError(f"Expected list in {response_path}, got {type(ds).__name__}")
 

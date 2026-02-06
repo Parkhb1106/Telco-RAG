@@ -178,7 +178,8 @@ def main() -> None:
                 "context": context,
                 "error": err,
             }
-            f_out.write(json.dumps(row, ensure_ascii=False, indent=4) + "\n")
+            f_out.write(json.dumps(row, ensure_ascii=False) + "\n")
+            # f_out.write(json.dumps(row, ensure_ascii=False, indent=4) + "\n")
 
             if args.sleep > 0:
                 time.sleep(args.sleep)
