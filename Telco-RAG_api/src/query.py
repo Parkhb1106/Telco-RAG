@@ -5,6 +5,8 @@ import torch
 import traceback
 import re
 import heapq
+import math
+from collections import Counter
 from tqdm.auto import tqdm
 from torch.utils.data import DataLoader, TensorDataset
 from src.retrieval import find_nearest_neighbors_faiss
@@ -26,7 +28,7 @@ class Query:
         self.enhanced_query = query
         self.context = [context] if isinstance(context, str) else context
         self.context_source = []
-        self.context_similarity = []
+        self.context_score = []
         self.wg = []
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = NNRouter()
@@ -143,7 +145,7 @@ class Query:
             if isinstance(result, list):
                 self.context = [f"\nRetrieval {i+1}:\n...{data}...\nThis retrieval is performed from the document 3GPP {source}.\n" for i, (index, data, source, _) in enumerate(result)]
                 self.context_source = [f"Index: {index}, Source: {source}" for index, _, source, _ in result]
-                self.context_similarity = similarity
+                self.context_score = similarity
             else:
                 self.context = result
         except Exception as e:
@@ -181,7 +183,7 @@ class Query:
         else:  
             self.get_question_context_faiss(batch=embedded_docs, k=k, use_context=True)
           
-    def get_custom_context_keyword(self, k=10):
+    def get_custom_context_keyword(self, k=10, k1 = 1.5, b = 0.75):
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
         meta_path = os.path.join(base_dir, "data", "db", "meta.jsonl")
 
@@ -197,7 +199,7 @@ class Query:
         if not keywords:
             keywords = tokens
 
-        matches = []
+        docs = []
         doc_index = 0
         with open(meta_path, "r", encoding="utf-8") as f:
             for line in f:
@@ -214,18 +216,48 @@ class Query:
                     if not text:
                         doc_index += 1
                         continue
-                    text_lower = text.lower()
-                    score = 0
-                    for kw in keywords:
-                        if kw in text_lower:
-                            score += text_lower.count(kw)
-                    if score > 0:
-                        matches.append((score, doc_index, text, m.get("source")))
+                    text_tokens = re.findall(r"[A-Za-z0-9]+(?:\\.[A-Za-z0-9]+)*", text.lower())
+                    if not text_tokens:
+                        doc_index += 1
+                        continue
+                    docs.append((doc_index, text, m.get("source"), text_tokens))
                     doc_index += 1
+
+        if not docs:
+            self.context = "No keyword matches found in custom documents."
+            self.context_source = []
+            self.context_score = []
+            return
+
+        # BM25 scoring
+        N = len(docs)
+        avgdl = sum(len(toks) for _, _, _, toks in docs) / N if N > 0 else 0.0
+        doc_freq = {}
+        for _, _, _, toks in docs:
+            for term in set(toks):
+                doc_freq[term] = doc_freq.get(term, 0) + 1
+
+        matches = []
+        for idx, text, source, toks in docs:
+            tf = Counter(toks)
+            dl = len(toks)
+            score = 0.0
+            for term in keywords:
+                if term not in tf:
+                    continue
+                df = doc_freq.get(term, 0)
+                # BM25 IDF with +1 to keep it positive
+                idf = math.log((N - df + 0.5) / (df + 0.5) + 1.0)
+                term_tf = tf[term]
+                denom = term_tf + k1 * (1 - b + b * (dl / avgdl if avgdl > 0 else 0.0))
+                score += idf * (term_tf * (k1 + 1)) / denom
+            if score > 0:
+                matches.append((score, idx, text, source))
 
         if not matches:
             self.context = "No keyword matches found in custom documents."
             self.context_source = []
+            self.context_score = []
             return
 
         top = heapq.nlargest(k, matches, key=lambda x: x[0])
@@ -234,7 +266,8 @@ class Query:
             for i, (_, _, text, source) in enumerate(top)
         ]
         self.context_source = [f"Index: {idx}, Source: {source}" for _, idx, _, source in top]
-        return self.context, self.context_similarity
+        self.context_score = [score for score, _, _, _ in top]
+        return self.context, self.context_score
   
     def get_custom_context(self, k=10, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
         embedded_docs = get_embeddings_custom()
@@ -243,7 +276,7 @@ class Query:
             self.validate_context(model_name=model_name, k=k, UI_flag=UI_flag)
         else:  
             self.get_question_context_faiss(batch=embedded_docs, k=k, use_context=True)
-        return self.context, self.context_similarity
+        return self.context, self.context_score
 
     def fusion_context(self, semantic_search, semantic_score, keyword_search, keyword_score, k=10, semantic_weight=1.2, keyword_weight=1.0, rrf_k=60, llm_rerank_head=4, llm_rerank_tail=20, query=None, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
         
