@@ -267,7 +267,7 @@ class Query:
         ]
         self.context_source = [f"Index: {idx}, Source: {source}" for _, idx, _, source in top]
         self.context_score = [score for score, _, _, _ in top]
-        return self.context, self.context_score
+        return self.context
   
     def get_custom_context(self, k=10, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
         embedded_docs = get_embeddings_custom()
@@ -276,9 +276,9 @@ class Query:
             self.validate_context(model_name=model_name, k=k, UI_flag=UI_flag)
         else:  
             self.get_question_context_faiss(batch=embedded_docs, k=k, use_context=True)
-        return self.context, self.context_score
+        return self.context
 
-    def fusion_context(self, semantic_search, semantic_score, keyword_search, keyword_score, k=10, semantic_weight=1.2, keyword_weight=1.0, rrf_k=60, llm_rerank_head=4, llm_rerank_tail=20, query=None, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
+    def fusion_context(self, semantic_search, keyword_search, k=10, semantic_weight=1.2, keyword_weight=1.0, rrf_k=60, llm_rerank_head=4, llm_rerank_tail=20, query=None, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
         
         def _ensure_list(value):
             if value is None:
@@ -336,6 +336,8 @@ class Query:
             scores.items(),
             key=lambda item: (-item[1], order_hint.get(item[0], 1_000_000))
         )
+        
+        self.context_score = 
 
         if query and ranked:
             try:
