@@ -16,7 +16,7 @@ from ragas.metrics import faithfulness, answer_relevancy, context_recall, contex
 from pipeline_offline import TelcoRAG
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DEFAULT_DATASET_DIR = os.path.join(BASE_DIR, "evaluation_system")
+DEFAULT_DATASET_DIR = os.path.join(BASE_DIR, "evaluation_system", "inputs")
 DEFAULT_BASENAME = "ragas_qa_dataset"
 
 DEFAULT_MODEL_NAME = os.getenv("TELCORAG_MODEL_NAME", "Qwen/Qwen3-30B-A3B-Instruct-2507")
@@ -60,6 +60,7 @@ def build_eval_dataset(test_df: pd.DataFrame) -> Dataset:
 
 def main(): 
     parser = argparse.ArgumentParser(description="Evaluate Telco-RAG using RAGAS framework.")
+    parser.add_argument("--dataset", type=str, default=DEFAULT_BASENAME, help="Name of the dataset")
     parser.add_argument("--output", type=str, default="ragas_evaluation_results.csv", help="Path to save")
     args = parser.parse_args()
 
@@ -81,7 +82,7 @@ def main():
             context_recall,
             faithfulness,
             answer_relevancy,
-            #answer_similarity,
+            answer_similarity,
         ]
         #result = evaluate(eval_dataset, metrics=metrics, llm=llm, embeddings=embeddings)
         result = evaluate(eval_dataset, metrics=metrics)

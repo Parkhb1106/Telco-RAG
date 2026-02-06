@@ -28,6 +28,37 @@ export OPTIONS='{"option 1: Direct connection of 3GPP access to 5GC", "option 2:
 export ANSWER='option 2: Establishment of user-plane resources over EPC'
 python Telco-RAG/Telco-RAG_api/pipeline_online.py --query "$QUERY" --options "$OPTIONS" --answer "$ANSWER"
 
+
+cd Telco-RAG/Telco-RAG_api
+export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/TeleQnA_load.py
+
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/mcq_generation.py \
+ --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/MCQ_teleqna.json
+
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/mcq_evaluation.py
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 cd Telco-RAG/Telco-RAG_api
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
 python evaluation_system/mcq_evaluation.py \
@@ -38,36 +69,10 @@ PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
 python evaluation_system/mcq_evaluation.py \
  --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/MCQ_gemini.json
 
-
 cd Telco-RAG/Telco-RAG_api
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
-python evaluation_system/mcq_generation.py \
+python evaluation_system/mcq_evaluation.py \
  --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/MCQ_provided.json
-
-cd Telco-RAG/Telco-RAG_api
-PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
-python evaluation_system/mcq_evaluation.py
-
-
-cd Telco-RAG/Telco-RAG_api
-export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx
-PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
-python /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/TeleQnA_load.py
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 python Telco-RAG/Telco-RAG_api/evaluation_system/RAGAS_QA_Generation.py \
   --embeddings Telco-RAG/data/db/embeddings.npy \

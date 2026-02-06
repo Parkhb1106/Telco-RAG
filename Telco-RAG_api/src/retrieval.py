@@ -43,7 +43,7 @@ def find_nearest_neighbors_faiss(query_text, faiss_index, data_mapping, k, sourc
                 source = source_mapping.get(index, "Source not found")
                 embedding = embedding_mapping.get(index, "Data not found")
                 nearest_neighbors.append((index, data, source, embedding))
-        return nearest_neighbors
+        return nearest_neighbors, D[0]
     except Exception as e:
         print(f"Error in find_nearest_neighbors_faiss: {str(e)}")
         traceback.print_exc()

@@ -26,6 +26,7 @@ class Query:
         self.enhanced_query = query
         self.context = [context] if isinstance(context, str) else context
         self.context_source = []
+        self.context_similarity = []
         self.wg = []
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = NNRouter()
@@ -138,10 +139,11 @@ class Query:
     def get_question_context_faiss(self, batch, k, use_context=False):
         try:
             faiss_index, faiss_index_to_data_mapping, source_mapping, embedding_mapping = get_faiss_batch_index(batch)
-            result = find_nearest_neighbors_faiss(self.query, faiss_index, faiss_index_to_data_mapping, k, source_mapping=source_mapping, embedding_mapping=embedding_mapping, context=self.context if use_context else None)
+            result, similarity = find_nearest_neighbors_faiss(self.query, faiss_index, faiss_index_to_data_mapping, k, source_mapping=source_mapping, embedding_mapping=embedding_mapping, context=self.context if use_context else None)
             if isinstance(result, list):
                 self.context = [f"\nRetrieval {i+1}:\n...{data}...\nThis retrieval is performed from the document 3GPP {source}.\n" for i, (index, data, source, _) in enumerate(result)]
                 self.context_source = [f"Index: {index}, Source: {source}" for index, _, source, _ in result]
+                self.context_similarity = similarity
             else:
                 self.context = result
         except Exception as e:
@@ -232,7 +234,7 @@ class Query:
             for i, (_, _, text, source) in enumerate(top)
         ]
         self.context_source = [f"Index: {idx}, Source: {source}" for _, idx, _, source in top]
-        return self.context
+        return self.context, self.context_similarity
   
     def get_custom_context(self, k=10, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
         embedded_docs = get_embeddings_custom()
@@ -241,9 +243,9 @@ class Query:
             self.validate_context(model_name=model_name, k=k, UI_flag=UI_flag)
         else:  
             self.get_question_context_faiss(batch=embedded_docs, k=k, use_context=True)
-        return self.context
+        return self.context, self.context_similarity
 
-    def fusion_context(self, semantic_search, keyword_search, k=10, semantic_weight=1.2, keyword_weight=1.0, rrf_k=60, llm_rerank_head=4, llm_rerank_tail=20, query=None, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
+    def fusion_context(self, semantic_search, semantic_score, keyword_search, keyword_score, k=10, semantic_weight=1.2, keyword_weight=1.0, rrf_k=60, llm_rerank_head=4, llm_rerank_tail=20, query=None, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
         
         def _ensure_list(value):
             if value is None:
