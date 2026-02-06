@@ -40,6 +40,11 @@ python evaluation_system/mcq_evaluation.py \
 
 cd Telco-RAG/Telco-RAG_api
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/mcq_generation.py \
+ --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/MCQ_provided.json
+
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
 python evaluation_system/mcq_evaluation.py \
  --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/MCQ_provided.json
 
@@ -47,8 +52,7 @@ python evaluation_system/mcq_evaluation.py \
 cd Telco-RAG/Telco-RAG_api
 export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
-python /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/TeleQnA_evaluation.py --limit 100 --shuffle
-
+python /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/TeleQnA_load.py
 
 
 

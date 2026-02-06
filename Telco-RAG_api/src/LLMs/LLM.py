@@ -3,6 +3,7 @@ import tiktoken
 from sentence_transformers import SentenceTransformer
 from functools import lru_cache
 import asyncio
+from typing import Any, Dict, List, Optional, Tuple
 
 import anthropic # type: ignore
 from mistralai.async_client import MistralAsyncClient
@@ -349,3 +350,66 @@ def embedding(input, dimension=1024):
     # if embeddings and isinstance(embeddings[0], (int, float)):
     #     embeddings = [embeddings]
     # return _EmbeddingResponse(embeddings)
+    
+def rerank_vllm(
+    query: str,
+    documents: List[str],
+    top_n: Optional[int] = None,
+    *,
+    base_url: str = "http://localhost:8002/v1",
+    model: str = "Qwen/Qwen3-Reranker-0.6B",
+    timeout: float = 60.0,
+) -> Dict[str, Any]:
+    """
+    vLLM OpenAI-compatible rerank endpoint: POST {base_url}/rerank
+    Payload schema (vLLM docs): {model, query, documents, top_n?}
+    Response has 'results': [{index, relevance_score, document:{text}}...]
+    """
+    url = base_url.rstrip("/") + "/rerank"
+    payload: Dict[str, Any] = {
+        "model": model,
+        "query": query,
+        "documents": documents,
+    }
+    if top_n is not None:
+        payload["top_n"] = top_n
+
+    resp = requests.post(
+        url,
+        headers={"accept": "application/json", "Content-Type": "application/json"},
+        json=payload,
+        timeout=timeout,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+def rerank_passages(
+    query: str,
+    passages: List[str],
+    top_n: Optional[int] = None,
+    *,
+    base_url: str = "http://localhost:8002/v1",
+    model: str = "Qwen/Qwen3-Reranker-0.6B",
+) -> List[Tuple[int, float, str]]:
+    """
+    편하게 쓰라고 만든 래퍼:
+    반환: [(original_index, relevance_score, passage_text), ...]  (score 내림차순)
+    """
+    out = rerank_vllm(
+        query=query,
+        documents=passages,
+        top_n=top_n,
+        base_url=base_url,
+        model=model,
+    )
+    results = out.get("results", [])
+    ranked: List[Tuple[int, float, str]] = []
+    for r in results:
+        idx = int(r["index"])
+        score = float(r.get("relevance_score", 0.0))
+        # vLLM 예시 응답에서는 document: {text: "..."} 형태 :contentReference[oaicite:3]{index=3}
+        doc_text = r.get("document", {}).get("text", passages[idx] if 0 <= idx < len(passages) else "")
+        ranked.append((idx, score, doc_text))
+
+    ranked.sort(key=lambda x: x[1], reverse=True)
+    return ranked
