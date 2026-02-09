@@ -98,13 +98,13 @@ def safe_div(a: int, b: int) -> float:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    default_dataset_path = Path(__file__).resolve().parent / "inputs" / "MCQ_teleqna.json"
-    ap.add_argument("--dataset", default=str(default_dataset_path), help="Local MCQ.json path")
+    default_dataset_path = Path(__file__).resolve().parent / "inputs" / "OPENENDED.json"
+    ap.add_argument("--dataset", default=str(default_dataset_path), help="Local OPENENDED.json path")
     ap.add_argument("--limit", type=int, default=0, help="Limit number of questions (0 = all)")
     ap.add_argument("--shuffle", action="store_true", help="Shuffle before slicing limit")
     ap.add_argument("--seed", type=int, default=42, help="Seed for shuffle")
     ap.add_argument("--llm", default="Qwen/Qwen3-30B-A3B-Instruct-2507", help="Passed into TelcoRAG(model_name=...)")
-    ap.add_argument("--out-dir", default="evaluation_system/outputs/mcq", help="Output directory")
+    ap.add_argument("--out-dir", default="evaluation_system/outputs/open_ended", help="Output directory")
     ap.add_argument("--sleep", type=float, default=0.0, help="Optional sleep seconds per sample (rate-limit / thermal)")
     args = ap.parse_args()
 
@@ -132,14 +132,12 @@ def main() -> None:
 
     started = time.time()
     with details_path.open("w", encoding="utf-8") as f_out:
-        for i, ex in enumerate(tqdm(ds, desc="MCQ", total=len(ds))):
+        for i, ex in enumerate(tqdm(ds, desc="OPENENDED", total=len(ds))):
             # TeleQnA uses lower-case keys in example shown on dataset card :contentReference[oaicite:3]{index=3}
             q = ex.get("question")
             if not isinstance(q, str) or not q.strip():
                 # skip malformed
                 continue
-            
-            options_dict, option_keys_sorted = extract_options(ex)
             
             # Call your pipeline
             raw_resp_text = ""
@@ -149,7 +147,7 @@ def main() -> None:
                 resp, context, context_score = asyncio.run(TelcoRAG(
                     query=q,
                     answer=None,
-                    options=options_dict,  # normalized dict ("option N": text)
+                    options=None,  # normalized dict ("option N": text)
                     model_name=args.llm,
                 ))
                 raw_resp_text = "" if resp is None else str(resp)
@@ -158,7 +156,7 @@ def main() -> None:
                 
             overall.total += 1
 
-            category = ex.get("category", "UNKNOWN")
+            category = ex.get("domain", "UNKNOWN")
             cat_key = str(category)
             if cat_key not in by_subject:
                 by_subject[cat_key] = Counters()
@@ -166,12 +164,12 @@ def main() -> None:
 
             # Write detail row
             row = {
-                "id": i,
+                "id": ex.get("id", i),
                 "category": category,
+                "difficulty" : ex.get("difficulty", None),
                 "question": q,
-                "options": options_dict,
                 "answer": ex.get("answer", None),
-                "explanation": ex.get("explanation", None),
+                "expected_keywords" : ex.get("expected_keywords", None),
                 "response": raw_resp_text,
                 "context": context,
                 "error": err,
