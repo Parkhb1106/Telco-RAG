@@ -12,6 +12,10 @@ vllm serve Qwen/Qwen3-Embedding-0.6B \
   --seed 42 \
   --gpu_memory_utilization 0.2
 
+vllm serve Qwen/Qwen3-Reranker-0.6B \
+  --port 8001 \
+  --seed 42 \
+  --gpu_memory_utilization 0.2
 
 
 

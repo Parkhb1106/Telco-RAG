@@ -20,6 +20,7 @@ from src.LLMs.LLM import submit_prompt_flex, a_submit_prompt_flex, embedding
 from src.validator import validator_RAG
 from src.NNRouter import NNRouter
 from api.LLM import a_submit_prompt_flex_UI, submit_prompt_flex_UI
+from src.LLMs.LLM import rerank_vllm
 
 class Query:
     def __init__(self, query, context):
@@ -278,7 +279,7 @@ class Query:
             self.get_question_context_faiss(batch=embedded_docs, k=k, use_context=True)
         return self.context
 
-    def fusion_context(self, semantic_search, keyword_search, k=10, semantic_weight=1.2, keyword_weight=1.0, rrf_k=60, llm_rerank_head=4, llm_rerank_tail=20, query=None, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
+    def fusion_context(self, semantic_search, keyword_search, k=10, semantic_weight=1.2, keyword_weight=1.0, rrf_k=60, query=None, model_name='gpt-4o-mini', validate_flag=True, UI_flag=False):
         
         def _ensure_list(value):
             if value is None:
@@ -336,68 +337,54 @@ class Query:
             scores.items(),
             key=lambda item: (-item[1], order_hint.get(item[0], 1_000_000))
         )
-        
-        self.context_score = 
 
+        rerank_scores = {}
         if query and ranked:
+            passages = []
+            for i, (key, _) in enumerate(ranked, start=1):
+                body = _strip_retrieval_prefix(texts[key])
+                passages.append(f"{i}) {body}")
+            query = query
+            
+            retrieval_len = len(ranked)
+                
             try:
-                head = int(llm_rerank_head or 1)
-                tail = int(llm_rerank_tail or 0)
-            except Exception:
-                head, tail = 1, 0
-
-            if head < 1:
-                head = 1
-            if tail > len(ranked):
-                tail = len(ranked)
-
-            if tail >= head:
-                rerank_slice = ranked[head - 1:tail]
-            else:
-                rerank_slice = []
-
-            rerank_n = len(rerank_slice)
-            if rerank_n > 1:
-                passages = []
-                for i, (key, _) in enumerate(rerank_slice, start=1):
-                    body = _strip_retrieval_prefix(texts[key])
-                    passages.append(f"{i}) {body}")
-                prompt = (
-                    "You are a reranker. Rank the passages by relevance to the question. "
-                    "Return JSON only in the format: {\"ranking\":[...]}.\n"
-                    f"Question: {query}\n\n"
-                    "Passages:\n" + "\n".join(passages)
+                response = rerank_vllm(
+                    query=query,
+                    passages=passages,
+                    model="Qwen/Qwen3-Reranker-0.6B",
                 )
-                try:
-                    result = submit_prompt_flex(prompt, model=model_name, output_json=True)
-                    parsed = json.loads(result)
-                    order = parsed.get("ranking", [])
-                    if isinstance(order, list) and len(order) == rerank_n:
-                        idxs = []
-                        for x in order:
-                            try:
-                                idx = int(x)
-                            except Exception:
-                                idx = None
-                            if idx is None or idx < 1 or idx > rerank_n:
-                                idxs = []
-                                break
-                            idxs.append(idx - 1)
-                        if idxs and len(set(idxs)) == rerank_n:
-                            reranked = [rerank_slice[i] for i in idxs]
-                            ranked = ranked[:head - 1] + reranked + ranked[tail:]
-                except Exception:
-                    pass
+
+                results = response.get("results", [])
+                reranked_keys = []
+                for item in results[:retrieval_len]:
+                    doc_text = item.get("document", {}).get("text", "")
+                    key = _extract_payload(doc_text)
+                    if key in texts and key not in reranked_keys:
+                        reranked_keys.append(key)
+                        rerank_scores[key] = item.get("relevance_score")
+
+                for key, _ in ranked:
+                    if key not in reranked_keys:
+                        reranked_keys.append(key)
+
+                ranked = [(key, scores.get(key, 0.0)) for key in reranked_keys]
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                print(traceback.format_exc())
         
         if k is not None:
             ranked = ranked[:k]
 
         fused = []
+        score = []
         for i, (key, _) in enumerate(ranked, start=1):
             body = _strip_retrieval_prefix(texts[key])
             fused.append(f"\nRetrieval {i}:\n{body}")
+            score.append(f"{rerank_scores.get(key, scores.get(key, 0.0))}")
         
         self.context = fused
+        self.context_score = score
             
         if validate_flag:
             self.validate_context(model_name=model_name, k=k, UI_flag=UI_flag)

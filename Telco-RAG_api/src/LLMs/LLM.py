@@ -4,6 +4,8 @@ from sentence_transformers import SentenceTransformer
 from functools import lru_cache
 import asyncio
 from typing import Any, Dict, List, Optional, Tuple
+import requests
+import math
 
 import anthropic # type: ignore
 from mistralai.async_client import MistralAsyncClient
@@ -350,7 +352,35 @@ def embedding(input, dimension=1024):
     # if embeddings and isinstance(embeddings[0], (int, float)):
     #     embeddings = [embeddings]
     # return _EmbeddingResponse(embeddings)
-    
+
+@lru_cache(maxsize=2)
+def _get_vllm_reranker_components(model_name: str):
+    from transformers import AutoTokenizer
+    from vllm import LLM, SamplingParams
+    import torch
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer.padding_side = "left"
+    tokenizer.pad_token = tokenizer.eos_token
+    suffix = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+    suffix_tokens = tokenizer.encode(suffix, add_special_tokens=False)
+    true_token = tokenizer("yes", add_special_tokens=False).input_ids[0]
+    false_token = tokenizer("no", add_special_tokens=False).input_ids[0]
+    sampling_params = SamplingParams(
+        temperature=0,
+        max_tokens=1,
+        logprobs=20,
+        allowed_token_ids=[true_token, false_token],
+    )
+    llm = LLM(
+        model=model_name,
+        tensor_parallel_size=max(1, torch.cuda.device_count()),
+        max_model_len=10000,
+        enable_prefix_caching=True,
+        gpu_memory_utilization=0.8,
+    )
+    return llm, tokenizer, sampling_params, suffix_tokens, true_token, false_token
+
 def rerank_vllm(
     query: str,
     documents: List[str],
@@ -361,27 +391,66 @@ def rerank_vllm(
     timeout: float = 60.0,
 ) -> Dict[str, Any]:
     """
-    vLLM OpenAI-compatible rerank endpoint: POST {base_url}/rerank
-    Payload schema (vLLM docs): {model, query, documents, top_n?}
-    Response has 'results': [{index, relevance_score, document:{text}}...]
+    vLLM 로컬 엔진 기반 rerank.
+    반환 포맷은 기존 /rerank endpoint 응답과 동일하게 유지:
+    {'results': [{'index', 'relevance_score', 'document': {'text'}}]}
     """
-    url = base_url.rstrip("/") + "/rerank"
-    payload: Dict[str, Any] = {
-        "model": model,
-        "query": query,
-        "documents": documents,
-    }
-    if top_n is not None:
-        payload["top_n"] = top_n
+    if not documents:
+        return {"model": model, "query": query, "results": []}
 
-    resp = requests.post(
-        url,
-        headers={"accept": "application/json", "Content-Type": "application/json"},
-        json=payload,
-        timeout=timeout,
-    )
-    resp.raise_for_status()
-    return resp.json()
+    from vllm.inputs.data import TokensPrompt
+    llm, tokenizer, sampling_params, suffix_tokens, true_token, false_token = _get_vllm_reranker_components(model)
+
+    instruction = "Given a web search query, retrieve relevant passages that answer the query"
+    pairs = [(query, doc) for doc in documents]
+    messages = [
+        [
+            {
+                "role": "system",
+                "content": "Judge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\".",
+            },
+            {
+                "role": "user",
+                "content": f"<Instruct>: {instruction}\n\n<Query>: {q}\n\n<Document>: {d}",
+            },
+        ]
+        for q, d in pairs
+    ]
+    try:
+        tokenized_messages = tokenizer.apply_chat_template(
+            messages, tokenize=True, add_generation_prompt=False, enable_thinking=False
+        )
+    except TypeError:
+        tokenized_messages = tokenizer.apply_chat_template(
+            messages, tokenize=True, add_generation_prompt=False
+        )
+
+    max_length = 8192
+    prompt_token_ids = [ids[: max_length - len(suffix_tokens)] + suffix_tokens for ids in tokenized_messages]
+    prompts = [TokensPrompt(prompt_token_ids=ids) for ids in prompt_token_ids]
+    outputs = llm.generate(prompts, sampling_params, use_tqdm=False)
+
+    scored_results: List[Dict[str, Any]] = []
+    for idx, out in enumerate(outputs):
+        final_logits = out.outputs[0].logprobs[-1] if out.outputs and out.outputs[0].logprobs else {}
+        true_logit = final_logits[true_token].logprob if true_token in final_logits else -10.0
+        false_logit = final_logits[false_token].logprob if false_token in final_logits else -10.0
+        true_score = math.exp(true_logit)
+        false_score = math.exp(false_logit)
+        relevance_score = true_score / (true_score + false_score)
+        scored_results.append(
+            {
+                "index": idx,
+                "relevance_score": float(relevance_score),
+                "document": {"text": documents[idx]},
+            }
+        )
+
+    scored_results.sort(key=lambda x: x["relevance_score"], reverse=True)
+    if top_n is not None:
+        scored_results = scored_results[:top_n]
+
+    return {"model": model, "query": query, "results": scored_results}
 
 def rerank_passages(
     query: str,
