@@ -118,6 +118,7 @@ if __name__ == "__main__":
     ap.add_argument("--output-dir", type=str, default=str(base_dir / "outputs"), help="Output directory for xlsx mode")
     ap.add_argument("--max-sample-rows", type=int, default=5, help="Max non-empty samples per column for LLM prompt")
     ap.add_argument("--max-scan-rows", type=int, default=2000, help="Max rows scanned from xlsx")
+    ap.add_argument("--without-RAG", action="store_true", help="LLM only mode")
     args = ap.parse_args()
 
     def parse_options(options_str):
@@ -234,6 +235,7 @@ if __name__ == "__main__":
         )
 
     print("=== START ===")
+    without_RAG = args.without_rag
     xlsx_mode_requested = bool(args.input_file or args.input_dir)
     if xlsx_mode_requested:
         xlsx_targets = resolve_xlsx_inputs()
