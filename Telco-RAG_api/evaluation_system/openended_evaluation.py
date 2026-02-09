@@ -35,15 +35,18 @@ import time
 import asyncio
 import openai
 import random
+import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-from tqdm import tqdm  # pip install tqdm
-from src.LLMs.settings.config import get_settings
-from src.LLMs.LLM import 
+from typing import Any, Dict, List
+from tqdm import tqdm
+from langchain_openai import OpenAIEmbeddings
 from ragas.llms import llm_factory
 from ragas.metrics.collections import Faithfulness, SemanticSimilarity
 from bert_score import score as bertscore
+from src.LLMs.settings.config import get_settings
+from src.LLMs.LLM import LocalEmbeddingAdapter
+
 
 try:
     #from pipeline_offline import TelcoRAG  # type: ignore
@@ -130,7 +133,7 @@ def load_json_or_jsonl(path: Path) -> List[Dict[str, Any]]:
 # Main
 # ----------------------------
 
-def main() -> None:
+async def main() -> None:
     ap = argparse.ArgumentParser()
     default_response_path = Path(__file__).resolve().parent / "outputs" / "open_ended"
     ap.add_argument("--response", default=str(default_response_path), help="Local Open-ended response path")
@@ -138,7 +141,6 @@ def main() -> None:
     ap.add_argument("--shuffle", action="store_true", help="Shuffle before slicing limit")
     ap.add_argument("--seed", type=int, default=42, help="Seed for shuffle")
     ap.add_argument("--llm", default="Qwen/Qwen3-30B-A3B-Instruct-2507", help="Passed into TelcoRAG(model_name=...)")
-    ap.add_argument("--embed", default="Qwen/Qwen3-Embedding-0.6B", help="Embedding model")
     ap.add_argument("--out-dir", default="evaluation_system/outputs/open_ended", help="Output directory")
     ap.add_argument("--sleep", type=float, default=0.0, help="Optional sleep seconds per sample")
     args = ap.parse_args()
@@ -163,6 +165,25 @@ def main() -> None:
 
     overall = Counters()
     by_subject: Dict[str, Counters] = {}
+    total_similarity = 0.0
+    total_bert_score = 0.0
+    total_faithfulness = 0.0
+    
+    settings = get_settings()
+
+    client_llm = openai.AsyncOpenAI(
+        base_url = "http://localhost:8000/v1",
+        api_key=settings.any_api_key,
+    )
+    llms = llm_factory(args.llm, client=client_llm)
+    client_embed = openai.AsyncOpenAI(
+        base_url="http://localhost:8001/v1/",
+        api_key=openai.api_key
+    )
+    embeddings = LocalEmbeddingAdapter()
+    
+    scorer_similarity = SemanticSimilarity(embeddings=embeddings)
+    scorer_faithfulness = Faithfulness(llm=llms)
 
     started = time.time()
     # details_path가 json이 아닌 jsonl인 경우로 코드 수정 필요
@@ -183,23 +204,10 @@ def main() -> None:
             context_score = ex.get("context_score", None)
             err = ex.get("error", None)
 
-            settings = get_settings()
-
-            client_llm = openai.AsyncOpenAI(
-                base_url = "http://localhost:8000/v1",
-                api_key=settings.any_api_key,
-            )
-            llm = llm_factory(args.llm, client=client_llm)
-            client_embed = openai.AsyncOpenAI(
-                base_url="http://localhost:8001/v1/",
-                api_key=openai.api_key
-            )
-            embeddings = OpenAIEmbeddings(model=args.embed, client=client_embed)
             
             # similarity (RAGAS SemanticSimilarity)
             try:
-                scorer = SemanticSimilarity(embeddings=embeddings)
-                result = await scorer.ascore(
+                result = await scorer_similarity.ascore(
                     reference=answer,
                     response=response
                 )
@@ -209,8 +217,7 @@ def main() -> None:
 
             # faithfulness (RAGAS Faithfulness)
             try:
-                scorer = Faithfulness(llm=llm)
-                result = await scorer.ascore(
+                result = await scorer_faithfulness.ascore(
                     user_input=q,
                     response=response,
                     retrieved_contexts=context
@@ -235,9 +242,9 @@ def main() -> None:
             
             # Update metrics
             overall.total += 1
-            overall.similarity += similarity
-            overall.bert_score += bert_score
-            overall.faithfulness += faithfulness
+            total_similarity += similarity
+            total_bert_score += bert_score
+            total_faithfulness += faithfulness
 
             cat_key = str(category)
             if cat_key not in by_subject:
@@ -274,9 +281,9 @@ def main() -> None:
         "llm": llm_name,
         "elapsed_sec": elapsed,
         "count": overall.total,
-        "similarity": safe_div(overall.similarity, overall.total),
-        "bert_score": safe_div(overall.bert_score, overall.total),
-        "faithfulness": safe_div(overall.faithfulness, overall.total),
+        "similarity": safe_div(total_similarity, overall.total),
+        "bert_score": safe_div(total_bert_score, overall.total),
+        "faithfulness": safe_div(total_faithfulness, overall.total),
         "by_category": {
             k: {
                 "n": v.total,
@@ -295,12 +302,12 @@ def main() -> None:
     summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print("\n=== DONE ===")
-    print(f"- similarity: {summary['similarity']} ({overall.similarity}/{overall.total})")
-    print(f"- bert_score: {summary['bert_score']} ({overall.bert_score}/{overall.total})")
-    print(f"- faithfulness: {summary['faithfulness']} ({overall.faithfulness}/{overall.total})")
+    print(f"- similarity: {summary['similarity']} ({total_similarity}/{overall.total})")
+    print(f"- bert_score: {summary['bert_score']} ({total_bert_score}/{overall.total})")
+    print(f"- faithfulness: {summary['faithfulness']} ({total_faithfulness}/{overall.total})")
     print(f"- details:  {details_path}")
     print(f"- summary:   {summary_path}")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
