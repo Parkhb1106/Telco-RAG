@@ -280,8 +280,15 @@ Output requirements:
 """.strip()
 
 
+_TRAILING_COMMA_RE = re.compile(r',\s*(\}|])')
+
+
+def _sanitize_json_text(text: str) -> str:
+    return _TRAILING_COMMA_RE.sub(r'\1', text)
+
+
 def _load_json_object(text: str) -> Dict[str, Any]:
-    cleaned = text.strip()
+    cleaned = _sanitize_json_text(text.strip())
     if not cleaned:
         return {}
 
