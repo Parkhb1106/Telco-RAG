@@ -1,13 +1,17 @@
 import os
+from pathlib import Path
 import traceback
 from src.query import Query
 from src.generate import generate, check_question
 from src.LLMs.LLM import submit_prompt_flex
-import traceback
+from src.xlsx_schema import analyze_xlsx_with_llm
 import git
 import asyncio
 import time
-import ujson
+try:
+    import ujson as jsonlib
+except ImportError:
+    import json as jsonlib
 
 folder_url = "https://huggingface.co/datasets/netop/Embeddings3GPP-R18"
 clone_directory = "./3GPP-Release18"
@@ -101,11 +105,19 @@ if __name__ == "__main__":
 if __name__ == "__main__":
     import argparse
 
+    base_dir = Path(__file__).resolve().parent
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--query", type=str, default=None)
     ap.add_argument("--answer", type=str, default=None)
     ap.add_argument("--options", type=str, default=None, help="JSON string for options dict")
     ap.add_argument("--model-name", type=str, default="Qwen/Qwen3-30B-A3B-Instruct-2507")
+    ap.add_argument("--input-file", type=str, default=None, help="Single .xlsx file path")
+    ap.add_argument("--input-dir", type=str, default=None, help="Directory containing .xlsx files")
+    ap.add_argument("--input-glob", type=str, default="*.xlsx", help="Glob pattern for xlsx files")
+    ap.add_argument("--output-dir", type=str, default=str(base_dir / "outputs"), help="Output directory for xlsx mode")
+    ap.add_argument("--max-sample-rows", type=int, default=5, help="Max non-empty samples per column for LLM prompt")
+    ap.add_argument("--max-scan-rows", type=int, default=2000, help="Max rows scanned from xlsx")
     args = ap.parse_args()
 
     def parse_options(options_str):
@@ -115,7 +127,7 @@ if __name__ == "__main__":
         if not options_str:
             return None
         try:
-            parsed = ujson.loads(options_str)
+            parsed = jsonlib.loads(options_str)
         except Exception:
             parsed = None
 
@@ -140,19 +152,19 @@ if __name__ == "__main__":
             return extracted
         return [options_str]
 
+    def _to_jsonable(obj):
+        if isinstance(obj, set):
+            return sorted(obj)
+        if isinstance(obj, dict):
+            return {k: _to_jsonable(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [_to_jsonable(v) for v in obj]
+        return obj
+
     def run_once(query, answer, options):
         if not query:
             return
 
-        def _to_jsonable(obj):
-            if isinstance(obj, set):
-                return sorted(obj)
-            if isinstance(obj, dict):
-                return {k: _to_jsonable(v) for k, v in obj.items()}
-            if isinstance(obj, (list, tuple)):
-                return [_to_jsonable(v) for v in obj]
-            return obj
-        
         response, context, context_score = asyncio.run(TelcoRAG(
             query=query,
             answer=answer,
@@ -160,7 +172,7 @@ if __name__ == "__main__":
             model_name=args.model_name
         ))
         
-        output_dir = os.path.join("outputs", "pipeline_online")
+        output_dir = os.path.join(str(base_dir / "outputs"), "pipeline_online")
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"response_context_{int(time.time() * 1000)}.json")
         output = {
@@ -172,14 +184,68 @@ if __name__ == "__main__":
             "context_score" : _to_jsonable(context_score),
         }
         with open(output_path, "w") as f:
-            ujson.dump(output, f, indent=4)
+            jsonlib.dump(output, f, indent=4)
         
         print("-" * 50)
         print(f"[Response]:\n{response}")
         print("-" * 50 + "\n")
 
+    def resolve_xlsx_inputs() -> list[str]:
+        if args.input_file:
+            input_path = Path(args.input_file)
+            if input_path.suffix.lower() != ".xlsx":
+                raise ValueError(f"Only .xlsx is supported: {input_path}")
+            if not input_path.exists():
+                raise FileNotFoundError(f"Input file not found: {input_path}")
+            return [str(input_path)]
+
+        if args.input_dir:
+            input_dir = Path(args.input_dir)
+        else:
+            input_dir = base_dir / "inputs"
+            if not input_dir.exists():
+                return []
+
+        if not input_dir.exists():
+            raise FileNotFoundError(f"Input directory not found: {input_dir}")
+
+        matched = sorted(input_dir.glob(args.input_glob))
+        return [str(path) for path in matched if path.is_file() and path.suffix.lower() == ".xlsx"]
+
+    def run_xlsx_once(xlsx_path: str):
+        start = time.time()
+        output_data, preview, _ = analyze_xlsx_with_llm(
+            xlsx_path=xlsx_path,
+            model_name=args.model_name,
+            max_sample_rows=args.max_sample_rows,
+            max_scan_rows=args.max_scan_rows,
+        )
+
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / f"{Path(xlsx_path).stem}.json"
+        with output_path.open("w", encoding="utf-8") as f:
+            jsonlib.dump(_to_jsonable(output_data), f, indent=2)
+
+        end = time.time()
+        print(
+            f"[XLSX] {xlsx_path} -> {output_path} "
+            f"(columns={preview['column_count']}, scanned_rows={preview['rows_scanned']}, {end - start:.2f}s)"
+        )
+
     print("=== START ===")
-    if args.query is not None:
+    xlsx_mode_requested = bool(args.input_file or args.input_dir)
+    if xlsx_mode_requested:
+        xlsx_targets = resolve_xlsx_inputs()
+        if not xlsx_targets:
+            print("[XLSX] No .xlsx files found.")
+        for xlsx_path in xlsx_targets:
+            try:
+                run_xlsx_once(xlsx_path)
+            except Exception as e:
+                print(f"[XLSX][ERROR] {xlsx_path}: {e}")
+                traceback.print_exc()
+    elif args.query is not None:
         opts = parse_options(args.options)
         run_once(args.query, args.answer, opts)
     else:
