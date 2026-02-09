@@ -172,8 +172,8 @@ def main() -> None:
                 "expected_keywords" : ex.get("expected_keywords", None),
                 "response": raw_resp_text,
                 "context": context,
-                "error": err,
                 "context_score" : context_score,
+                "error": err,
             }
             f_out.write(json.dumps(row, ensure_ascii=False) + "\n")
             # f_out.write(json.dumps(row, ensure_ascii=False, indent=4) + "\n")

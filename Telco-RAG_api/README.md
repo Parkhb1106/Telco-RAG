@@ -27,12 +27,6 @@ export OPTIONS='{"option 1:...","option 2:..."}'
 export ANSWER=''
 python Telco-RAG/Telco-RAG_api/pipeline_online.py --query "$QUERY" --options "$OPTIONS" --answer "$ANSWER"
 
-[ex]
-export QUERY='In supporting an MA PDU Session, what does Rel-17 enable in terms of 3GPP access over EPC? [3GPP Release 17]'
-export OPTIONS='{"option 1: Direct connection of 3GPP access to 5GC", "option 2: Establishment of user-plane resources over EPC", "option 3: Use of NG-RAN access for all user-plane traffic", "option 4: Exclusive use of a non-3GPP access for user-plane traffic"}'
-export ANSWER='option 2: Establishment of user-plane resources over EPC'
-python Telco-RAG/Telco-RAG_api/pipeline_online.py --query "$QUERY" --options "$OPTIONS" --answer "$ANSWER"
-
 
 cd Telco-RAG/Telco-RAG_api
 export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx
@@ -49,8 +43,8 @@ PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
 python evaluation_system/mcq_evaluation.py
 
 
-
-
+python Telco-RAG/Telco-RAG_api/evaluation_system/jsonl_to_json.py --input OPENENDED_3gpp_rag_eval_qa_100.jsonl
+python Telco-RAG/Telco-RAG_api/evaluation_system/jsonl_to_json.py --input OPENENDED_dm_se_rrc_nas_qa_dataset.jsonl
 
 
 

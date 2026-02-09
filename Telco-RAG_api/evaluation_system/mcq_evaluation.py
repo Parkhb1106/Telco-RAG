@@ -290,7 +290,7 @@ def main() -> None:
 
             # Write detail row
             row = {
-                "num": i,
+                "id": i,
                 "question": q,
                 "options": options_dict,
                 "gold": {
