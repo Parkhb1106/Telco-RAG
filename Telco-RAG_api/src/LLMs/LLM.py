@@ -334,18 +334,6 @@ def embedding(input, dimension=1024):
     return response
 
 
-class LocalEmbeddingAdapter(Embeddings):
-    def embed_query(self, text: str) -> list[float]:
-        return embedding(text).data[0].embedding
-
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        # 서버가 batch input 지원하면 1회 호출
-        try:
-            resp = embedding(texts)
-            return [x.embedding for x in resp.data]
-        except Exception:
-            # 미지원 시 fallback
-            return [embedding(t).data[0].embedding for t in texts]
 
 
     # class _EmbeddingItem:

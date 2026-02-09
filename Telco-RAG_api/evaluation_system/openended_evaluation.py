@@ -34,18 +34,17 @@ import re
 import time
 import asyncio
 import openai
-import random
 import os
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 from tqdm import tqdm
-from langchain_openai import OpenAIEmbeddings
+from ragas.embeddings import embedding_factory
 from ragas.llms import llm_factory
 from ragas.metrics.collections import Faithfulness, SemanticSimilarity
 from bert_score import score as bertscore
 from src.LLMs.settings.config import get_settings
-from src.LLMs.LLM import LocalEmbeddingAdapter
 
 
 try:
@@ -74,6 +73,9 @@ ANSWER_OPT_RE = re.compile(r"option\s*(\d+)", re.IGNORECASE)
 class Counters:
     total: int = 0
     correct: int = 0
+    similarity: float = 0.0
+    bert_score: float = 0.0
+    faithfulness: float = 0.0
 
 
 def safe_div(a: int, b: int) -> float:
@@ -141,6 +143,7 @@ async def main() -> None:
     ap.add_argument("--shuffle", action="store_true", help="Shuffle before slicing limit")
     ap.add_argument("--seed", type=int, default=42, help="Seed for shuffle")
     ap.add_argument("--llm", default="Qwen/Qwen3-30B-A3B-Instruct-2507", help="Passed into TelcoRAG(model_name=...)")
+    ap.add_argument("--embed", default="Qwen/Qwen3-Embedding-0.6B", help="Embedding model")
     ap.add_argument("--out-dir", default="evaluation_system/outputs/open_ended", help="Output directory")
     ap.add_argument("--sleep", type=float, default=0.0, help="Optional sleep seconds per sample")
     args = ap.parse_args()
@@ -162,6 +165,10 @@ async def main() -> None:
     ds = load_json_or_jsonl(response_path)
     if not isinstance(ds, list):
         raise ValueError(f"Expected list in {response_path}, got {type(ds).__name__}")
+    if args.shuffle:
+        random.Random(args.seed).shuffle(ds)
+    if args.limit and args.limit > 0:
+        ds = ds[:args.limit]
 
     overall = Counters()
     by_subject: Dict[str, Counters] = {}
@@ -175,12 +182,18 @@ async def main() -> None:
         base_url = "http://localhost:8000/v1",
         api_key=settings.any_api_key,
     )
-    llms = llm_factory(args.llm, client=client_llm)
+    llms = llm_factory(
+        model=args.llm,
+        client=client_llm,
+    )
     client_embed = openai.AsyncOpenAI(
         base_url="http://localhost:8001/v1/",
-        api_key=openai.api_key
+        api_key=settings.any_api_key,
     )
-    embeddings = LocalEmbeddingAdapter()
+    embeddings = embedding_factory(
+        model=args.embed,
+        client=client_embed,
+    )
     
     scorer_similarity = SemanticSimilarity(embeddings=embeddings)
     scorer_faithfulness = Faithfulness(llm=llms)
@@ -188,7 +201,15 @@ async def main() -> None:
     started = time.time()
     # details_path가 json이 아닌 jsonl인 경우로 코드 수정 필요
     with details_path.open("w", encoding="utf-8") as f_out:
-        for i, ex in enumerate(tqdm(ds, desc="MCQ", total=len(ds))):
+        pbar = tqdm(
+            ds,
+            desc="OpenEval",
+            total=len(ds),
+            dynamic_ncols=True,
+            mininterval=0.5,
+            leave=True,
+        )
+        for i, ex in enumerate(pbar):
             # TeleQnA uses lower-case keys in example shown on dataset card :contentReference[oaicite:3]{index=3}
             q = ex.get("question")
             if not isinstance(q, str) or not q.strip():
@@ -203,6 +224,13 @@ async def main() -> None:
             context = ex.get("context", None)
             context_score = ex.get("context_score", None)
             err = ex.get("error", None)
+
+            if isinstance(context, str):
+                retrieved_contexts = [context]
+            elif isinstance(context, list):
+                retrieved_contexts = [str(c) for c in context]
+            else:
+                retrieved_contexts = []
 
             
             # similarity (RAGAS SemanticSimilarity)
@@ -220,7 +248,7 @@ async def main() -> None:
                 result = await scorer_faithfulness.ascore(
                     user_input=q,
                     response=response,
-                    retrieved_contexts=context
+                    retrieved_contexts=retrieved_contexts,
                 )
                 faithfulness = result.value
             except Exception:
@@ -253,6 +281,12 @@ async def main() -> None:
             by_subject[cat_key].similarity += similarity
             by_subject[cat_key].bert_score += bert_score
             by_subject[cat_key].faithfulness += faithfulness
+            pbar.set_postfix(
+                done=overall.total,
+                sim=f"{safe_div(total_similarity, overall.total):.3f}",
+                bert=f"{safe_div(total_bert_score, overall.total):.3f}",
+                faith=f"{safe_div(total_faithfulness, overall.total):.3f}",
+            )
 
             # Write detail row
             row = {

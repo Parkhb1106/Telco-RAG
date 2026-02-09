@@ -69,6 +69,6 @@ fi
 cd Telco-RAG/Telco-RAG_api
 
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
-python evaluation_system/mcq_generation.py --dataset "$DATASET_PATH" --llm "$LLM"
+python evaluation_system/openended_generation.py --dataset "$DATASET_PATH" --llm "$LLM"
 
 kill "$pid_llm" "$pid_emb" "$pid_rerank" 2>/dev/null || true
