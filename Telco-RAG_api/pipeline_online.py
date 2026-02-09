@@ -22,9 +22,27 @@ if not os.path.exists(clone_directory):
 else:
     print("Folder already exists. Skipping cloning.")
 
-async def TelcoRAG(query, answer= None, options= None, model_name='gpt-4o-mini'):
+async def TelcoRAG(
+    query,
+    answer=None,
+    options=None,
+    model_name='gpt-4o-mini',
+    xlsx_file: str | None = None,
+    max_sample_rows: int = 5,
+    max_scan_rows: int = 2000,
+):
     try:
         start =  time.time()
+        if xlsx_file:
+            normalized_schema, preview, llm_raw = analyze_xlsx_with_llm(
+                xlsx_path=xlsx_file,
+                model_name=model_name,
+                max_sample_rows=max_sample_rows,
+                max_scan_rows=max_scan_rows,
+            )
+            end = time.time()
+            print(f"[XLSX] Generation took {end-start:.2f} seconds")
+            return normalized_schema, preview, llm_raw
         question = Query(query, [])
 
         query = question.question # Query 객체에서 원본 질문 문자열을 꺼내서 로컬 변수 query에 복사
@@ -73,7 +91,7 @@ async def TelcoRAG(query, answer= None, options= None, model_name='gpt-4o-mini')
             end=time.time()
             print(f'Generation of this response took {end-start} seconds')
             return response, question.context, question.context_score
-    
+   
     except Exception as e:
         print(f"An error occurred: {e}")
         print(traceback.format_exc())
@@ -215,18 +233,19 @@ if __name__ == "__main__":
 
     def run_xlsx_once(xlsx_path: str):
         start = time.time()
-        output_data, preview, _ = analyze_xlsx_with_llm(
-            xlsx_path=xlsx_path,
+        response, preview, llm_raw = asyncio.run(TelcoRAG(
+            query="",
+            xlsx_file=xlsx_path,
             model_name=args.model_name,
             max_sample_rows=args.max_sample_rows,
             max_scan_rows=args.max_scan_rows,
-        )
+        ))
 
         output_dir = Path(args.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / f"{Path(xlsx_path).stem}.json"
         with output_path.open("w", encoding="utf-8") as f:
-            jsonlib.dump(_to_jsonable(output_data), f, indent=2)
+            jsonlib.dump(_to_jsonable(response), f, indent=2)
 
         end = time.time()
         print(
@@ -235,7 +254,6 @@ if __name__ == "__main__":
         )
 
     print("=== START ===")
-    without_RAG = args.without_rag
     xlsx_mode_requested = bool(args.input_file or args.input_dir)
     if xlsx_mode_requested:
         xlsx_targets = resolve_xlsx_inputs()

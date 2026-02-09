@@ -10,6 +10,8 @@ try:
 except ImportError:
     import json as jsonlib
 
+from src.query import Query
+
 
 REQUIRED_COLUMN_FIELDS = ("entity", "description", "category", "unit", "layer")
 DEFAULT_COLUMN_VALUES = {
@@ -251,8 +253,39 @@ def extract_xlsx_preview(
     }
 
 
+def _build_rag_query(preview: Dict[str, Any]) -> str:
+    columns = preview["column_names"]
+    snippet = ", ".join(columns[:12])
+    continuation = ""
+    if len(columns) > 12:
+        continuation = f", and {len(columns) - 12} more columns"
+    return (
+        f"The Excel dataset {preview['file_name']} contains {len(columns)} KPI columns including "
+        f"{snippet}{continuation}. Describe typical definitions, units, and layers for such columns so I can produce a data dictionary."
+    )
+
+
+def _collect_rag_context(preview: Dict[str, Any], model_name: str) -> str:
+    question_text = _build_rag_query(preview)
+    question = Query(question_text, [])
+    question.def_TA_question()
+    semantic_search = question.get_custom_context(k=10, model_name=model_name, validate_flag=False)
+    keyword_search = question.get_custom_context_keyword(k=10)
+    question.fusion_context(
+        semantic_search=semantic_search,
+        keyword_search=keyword_search,
+        model_name=model_name,
+        validate_flag=False,
+    )
+    return "\n".join(question.context)
+
+
 def _build_schema_prompt(preview: Dict[str, Any]) -> str:
     columns_json = jsonlib.dumps(preview["columns"], ensure_ascii=False, indent=2)
+    context_section = ""
+    context_text = preview.get("rag_context", "").strip()
+    if context_text:
+        context_section = f"\nContext:\n{context_text}\n"
     return f"""
 You are a telecom KPI data dictionary expert.
 
@@ -264,6 +297,7 @@ Rows scanned: {preview["rows_scanned"]}
 Rows containing any data: {preview["rows_with_data"]}
 Columns:
 {columns_json}
+{context_section}
 
 Output requirements:
 1) Output must be a valid JSON object only.
@@ -364,6 +398,7 @@ def analyze_xlsx_with_llm(
         max_sample_rows=max_sample_rows,
         max_scan_rows=max_scan_rows,
     )
+    preview["rag_context"] = _collect_rag_context(preview, model_name)
     prompt = _build_schema_prompt(preview)
     llm_raw = submit_prompt_flex(prompt, model=model_name, output_json=True)
     parsed = _load_json_object(llm_raw)
