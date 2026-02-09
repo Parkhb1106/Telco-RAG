@@ -149,7 +149,7 @@ def main() -> None:
             context: Any = None
             err: Optional[str] = None
             try:
-                resp, context = asyncio.run(TelcoRAG(
+                resp, context, context_score = asyncio.run(TelcoRAG(
                     query=q,
                     answer=None,
                     options=options_dict,  # normalized dict ("option N": text)
@@ -177,6 +177,7 @@ def main() -> None:
                 "response": raw_resp_text,
                 "context": context,
                 "error": err,
+                "context_score" : context_score,
             }
             f_out.write(json.dumps(row, ensure_ascii=False) + "\n")
             # f_out.write(json.dumps(row, ensure_ascii=False, indent=4) + "\n")

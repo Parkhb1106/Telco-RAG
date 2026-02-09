@@ -272,6 +272,7 @@ def main() -> None:
             
             raw_resp_text = ex.get("response", None)
             context = ex.get("context", None)
+            context_score = ex.get("context_score", None)
             err = ex.get("error", None)
 
             pred_idx = parse_pred_index(raw_resp_text, max_opt) if not err else None
@@ -304,6 +305,7 @@ def main() -> None:
                 "category": subject,
                 "explanation": explanation,
                 "context": context,
+                "context_score" : context_score,
                 "error": err,
             }
             f_out.write(json.dumps(row, ensure_ascii=False, indent=4) + "\n")

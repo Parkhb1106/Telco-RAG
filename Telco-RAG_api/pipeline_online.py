@@ -53,22 +53,22 @@ async def TelcoRAG(query, answer= None, options= None, model_name='gpt-4o-mini')
             question.context.append(online_parag)'''
         
         if answer is not None:
-            response, context , _ = check_question(question, answer, options, model_name=model_name) # 컨텍스트와 옵션을 포함한 프롬프트를 만들어 LLM에 답을 생성
-            print(context)
+            response, response_raw, context , _ = check_question(question, answer, options, model_name=model_name) # 컨텍스트와 옵션을 포함한 프롬프트를 만들어 LLM에 답을 생성
+            print(response_raw)
             end=time.time()
             print(f'Generation of this response took {end-start} seconds')
-            return response, question.context
+            return response, question.context, question.context_score
         elif options is not None:
             response, context , _ = check_question(question, answer, options, model_name=model_name) # 컨텍스트와 옵션을 포함한 프롬프트를 만들어 LLM에 답을 생성
-            print(context)
+            print(response)
             end=time.time()
             print(f'Generation of this response took {end-start} seconds')
-            return response, context
+            return response, question.context, question.context_score
         else:
             response, context, _ = generate(question, model_name)
             end=time.time()
             print(f'Generation of this response took {end-start} seconds')
-            return response, context
+            return response, question.context, question.context_score
     
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -153,7 +153,7 @@ if __name__ == "__main__":
                 return [_to_jsonable(v) for v in obj]
             return obj
         
-        response, context = asyncio.run(TelcoRAG(
+        response, context, context_score = asyncio.run(TelcoRAG(
             query=query,
             answer=answer,
             options=options,
@@ -168,7 +168,8 @@ if __name__ == "__main__":
             "answer": answer,
             "options": _to_jsonable(options),
             "response": _to_jsonable(response),
-            "context": _to_jsonable(context)
+            "context": _to_jsonable(context),
+            "context_score" : _to_jsonable(context_score),
         }
         with open(output_path, "w") as f:
             ujson.dump(output, f, indent=4)

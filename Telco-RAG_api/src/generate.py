@@ -126,8 +126,8 @@ def check_question(question, answer, options, model_name='gpt-4o-mini'):
         predicted_answers_str = predicted_answers_str.replace('"\n', '",\n')
         print(predicted_answers_str)
         
+        context = f"The retrieved context provided to the LLM is:\n{content}"
         if answer is None:
-            context = f"The retrieved context provided to the LLM is:\n{content}"
             return predicted_answers_str, context, question.question
         
         print(answer)
@@ -138,11 +138,11 @@ def check_question(question, answer, options, model_name='gpt-4o-mini'):
 
         if real_answer_id == answer_id:
             print("Correct\n")
-            return  True, f"Option {answer_id}", syst_prompt
+            return  True, f"Option {answer_id}", context, syst_prompt
         else:
             print("Wrong\n")
             print(f"The chosen one is {answer_id}, but the answer is {real_answer_id}")
-            return  False, f"Option {answer_id}", syst_prompt
+            return  False, f"Option {answer_id}", context, syst_prompt
     except Exception as e:
         # Error handling to catch and report errors more effectively.
         print(f"An error occurred: {e}")

@@ -351,7 +351,7 @@ class Query:
             try:
                 response = rerank_vllm(
                     query=query,
-                    passages=passages,
+                    documents=passages,
                     model="Qwen/Qwen3-Reranker-0.6B",
                 )
 
@@ -368,23 +368,23 @@ class Query:
                     if key not in reranked_keys:
                         reranked_keys.append(key)
 
-                ranked = [(key, scores.get(key, 0.0)) for key in reranked_keys]
+                reranked = [(key, rerank_scores.get(key, 0.0)) for key in reranked_keys]
             except Exception as e:
                 print(f"An error occurred: {e}")
                 print(traceback.format_exc())
         
         if k is not None:
-            ranked = ranked[:k]
+            reranked = reranked[:k]
 
         fused = []
-        score = []
-        for i, (key, _) in enumerate(ranked, start=1):
+        scores = []
+        for i, (key, score) in enumerate(reranked, start=1):
             body = _strip_retrieval_prefix(texts[key])
             fused.append(f"\nRetrieval {i}:\n{body}")
-            score.append(f"{rerank_scores.get(key, scores.get(key, 0.0))}")
+            scores.append(score)
         
         self.context = fused
-        self.context_score = score
+        self.context_score = scores
             
         if validate_flag:
             self.validate_context(model_name=model_name, k=k, UI_flag=UI_flag)
