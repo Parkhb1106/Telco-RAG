@@ -1,0 +1,743 @@
+[
+    {
+        "id": 1,
+        "domain": "RRC 기초 및 상태",
+        "difficulty": "Easy",
+        "question": "RRC의 주요 역할 3가지는 무엇인가요?",
+        "answer": "RRC(Radio Resource Control)는 (1) 무선 자원/베어러 제어(예: SRB/DRB 설정·해제), (2) UE 상태 관리(IDLE/INACTIVE/CONNECTED 전이 및 연결 관리), (3) 이동성·측정 제어(측정 설정, 보고 기반 핸드오버/셀 재선택 지원)를 담당합니다.",
+        "expected_keywords": [
+            "RRC",
+            "bearer",
+            "SRB",
+            "DRB",
+            "state",
+            "mobility",
+            "measurement"
+        ]
+    },
+    {
+        "id": 2,
+        "domain": "RRC 기초 및 상태",
+        "difficulty": "Easy",
+        "question": "AS(Access Stratum) 계층 내에서 RRC는 어느 계층과 통신하나요?",
+        "answer": "AS 내에서 RRC는 하위 계층인 PDCP/RLC/MAC/PHY와 인터페이스하며, 상위로는 NAS로부터 전달된 메시지를 받아(또는 전달) RRC 신호로 운반합니다. 실질적인 보안(무결성/암호화) 적용은 주로 PDCP가 수행합니다.",
+        "expected_keywords": [
+            "AS",
+            "RRC",
+            "PDCP",
+            "RLC",
+            "MAC",
+            "PHY",
+            "NAS"
+        ]
+    },
+    {
+        "id": 3,
+        "domain": "RRC 기초 및 상태",
+        "difficulty": "Medium",
+        "question": "RRC IDLE, INACTIVE, CONNECTED 상태의 차이점을 설명하세요.",
+        "answer": "RRC_IDLE: RRC 연결 없음, 코어 측에선 UE가 CM-IDLE/등록 상태일 수 있으며 셀 재선택·페이징 수신 중심.\nRRC_INACTIVE: RRC 연결 컨텍스트는 보존(빠른 Resume 가능)하지만 무선 자원은 점유하지 않음, RNA 기반 이동성/통지.\nRRC_CONNECTED: RRC 연결 유지, SRB/DRB 활성화 가능, 측정·핸드오버 등 연결 모드 이동성 수행.",
+        "expected_keywords": [
+            "RRC_IDLE",
+            "RRC_INACTIVE",
+            "RRC_CONNECTED",
+            "context",
+            "resume",
+            "paging"
+        ]
+    },
+    {
+        "id": 4,
+        "domain": "RRC 기초 및 상태",
+        "difficulty": "Medium",
+        "question": "RRC_INACTIVE 상태가 도입된 배경과 장점은 무엇인가요?",
+        "answer": "도입 배경은 '연결 유지 수준의 빠른 재개'와 'IDLE 수준의 저전력'을 절충하기 위해서입니다. 장점은 (1) Resume로 지연/신호부하 감소(Setup 대비), (2) 컨텍스트 보존으로 코어/기지국 처리 감소, (3) 저전력(무선 자원 미점유)과 이동성(RNA)을 동시에 달성하는 것입니다.",
+        "expected_keywords": [
+            "RRC_INACTIVE",
+            "resume",
+            "latency",
+            "signaling reduction",
+            "power saving",
+            "context"
+        ]
+    },
+    {
+        "id": 5,
+        "domain": "RRC 기초 및 상태",
+        "difficulty": "Easy",
+        "question": "RRC_IDLE 상태에서 단말이 수행하는 'Cell Selection'의 기준은 무엇인가요?",
+        "answer": "기본적으로 (1) 주파수/셀의 적합성(suitable/acceptable cell) 판단(PLMN, barred 여부 등), (2) 셀 품질 기준(예: Srxlev, Squal 기반) 충족, (3) 우선순위/리다이렉션 설정(주파수 우선순위, reselection parameters)을 바탕으로 가장 적합한 셀을 선택합니다.",
+        "expected_keywords": [
+            "cell selection",
+            "suitable cell",
+            "Srxlev",
+            "Squal",
+            "PLMN",
+            "barred"
+        ]
+    },
+    {
+        "id": 6,
+        "domain": "RRC 기초 및 상태",
+        "difficulty": "Easy",
+        "question": "'Paging' 메시지는 어느 상태의 단말에게 전달되나요?",
+        "answer": "페이징은 주로 RRC_IDLE 또는 RRC_INACTIVE의 UE를 깨우기 위해 전달됩니다(다운링크 데이터/시그널링 필요 시). RRC_CONNECTED UE는 이미 연결되어 있어 일반적으로 페이징 대상이 아닙니다.",
+        "expected_keywords": [
+            "paging",
+            "RRC_IDLE",
+            "RRC_INACTIVE",
+            "CM-IDLE"
+        ]
+    },
+    {
+        "id": 7,
+        "domain": "RRC 기초 및 상태",
+        "difficulty": "Medium",
+        "question": "RRC_CONNECTED 상태에서 단말의 이동성 관리는 어떻게 이루어지나요?",
+        "answer": "CONNECTED 이동성은 네트워크 제어 기반입니다. 기지국이 측정 설정(RRCReconfiguration 등)을 내려 UE가 Measurement Report를 올리면, 이를 바탕으로 핸드오버(주로 Event A3 등), PSCell/SSB/CSI-RS 기반 빔/셀 관리, 이중연결 시 MN/SN 재구성 등을 수행합니다.",
+        "expected_keywords": [
+            "connected mobility",
+            "measurement",
+            "report",
+            "handover",
+            "A3",
+            "reconfiguration"
+        ]
+    },
+    {
+        "id": 8,
+        "domain": "RRC 기초 및 상태",
+        "difficulty": "Medium",
+        "question": "RNA(RAN-based Notification Area)란 무엇이며 어느 상태에서 사용되나요?",
+        "answer": "RNA는 RAN이 관리하는 '통지 영역'으로, UE가 RRC_INACTIVE에서 이동하더라도 영역 내에선 불필요한 Resume 없이 머무르게 하고, 영역을 벗어나면 UE가 RNA Update(또는 통지)로 위치를 알려 네트워크가 페이징 범위를 효율화하도록 합니다.",
+        "expected_keywords": [
+            "RNA",
+            "RAN-based Notification Area",
+            "RRC_INACTIVE",
+            "RNA update",
+            "paging optimization"
+        ]
+    },
+    {
+        "id": 9,
+        "domain": "RRC 기초 및 상태",
+        "difficulty": "Easy",
+        "question": "단말이 전력 소모를 줄이기 위해 RRC 상태를 어떻게 활용하나요?",
+        "answer": "전송이 없을 때는 CONNECTED에서 해제되어 IDLE/INACTIVE로 내려가거나, INACTIVE로 전이해 컨텍스트를 유지하면서 무선 자원 점유를 줄입니다. 또한 IDLE/INACTIVE에서는 DRX 기반으로 페이징 주기만 깨어나 전력을 절감합니다.",
+        "expected_keywords": [
+            "power saving",
+            "RRC release",
+            "RRC_INACTIVE",
+            "DRX",
+            "paging cycle"
+        ]
+    },
+    {
+        "id": 10,
+        "domain": "RRC 기초 및 상태",
+        "difficulty": "Hard",
+        "question": "RRC Connection Setup 과정에서 사용되는 SRB(Signaling Radio Bearer) 0, 1, 2의 차이는?",
+        "answer": "SRB0: 공통 제어채널(CCCH) 기반의 초기 RRC 메시지 교환에 사용(아직 보안/PDCP 설정 전).\nSRB1: 전용 제어채널(DCCH) 기반, 연결 설정 후 핵심 RRC/NAS 운반에 사용, 보안(무결성/암호화) 적용 가능.\nSRB2: 추가적인 시그널링 용도(필요 시), SRB1과 유사하게 DCCH 기반이며 보안 적용 가능(구현/구성에 따라 사용 빈도는 낮음).",
+        "expected_keywords": [
+            "SRB0",
+            "SRB1",
+            "SRB2",
+            "CCCH",
+            "DCCH",
+            "PDCP",
+            "security"
+        ]
+    },
+    {
+        "id": 11,
+        "domain": "RRC 절차 및 메시지",
+        "difficulty": "Medium",
+        "question": "RRC Setup Request 메시지에 포함되는 주요 정보는 무엇인가요?",
+        "answer": "주요 필드는 (1) 초기 UE 식별자(예: 랜덤 값 또는 임시 식별자 계열), (2) establishment cause(예: mo-signalling, mo-data, emergency 등)입니다. 이를 통해 네트워크가 접속 원인과 UE 식별 단서를 얻습니다.",
+        "expected_keywords": [
+            "RRCSetupRequest",
+            "initial UE identity",
+            "establishment cause",
+            "emergency",
+            "mo-data"
+        ]
+    },
+    {
+        "id": 12,
+        "domain": "RRC 절차 및 메시지",
+        "difficulty": "Easy",
+        "question": "System Information Block (SIB) 중 SIB1의 역할은 무엇인가요?",
+        "answer": "SIB1은 셀/접속 관련 핵심 시스템 정보를 제공하여 UE가 셀에 캠핑하고 접속 절차를 진행할 수 있게 합니다(예: PLMN/TA 정보, 셀 선택·재선택 파라미터, 접근 제한/바링, SI 스케줄링 등).",
+        "expected_keywords": [
+            "SIB1",
+            "system information",
+            "cell selection",
+            "barring",
+            "PLMN",
+            "SI scheduling"
+        ]
+    },
+    {
+        "id": 13,
+        "domain": "RRC 절차 및 메시지",
+        "difficulty": "Easy",
+        "question": "MIB(Master Information Block)는 어떤 채널(Physical Channel)을 통해 전송되나요?",
+        "answer": "MIB는 물리 채널인 PBCH(Physical Broadcast Channel)로 전송됩니다(논리적으로 BCH에 매핑되는 브로드캐스트 정보).",
+        "expected_keywords": [
+            "MIB",
+            "PBCH",
+            "BCH",
+            "broadcast"
+        ]
+    },
+    {
+        "id": 14,
+        "domain": "RRC 절차 및 메시지",
+        "difficulty": "Medium",
+        "question": "Handover 시 RRC Reconfiguration 메시지가 수행하는 역할은?",
+        "answer": "핸드오버/이동성 과정에서 RRC Reconfiguration은 UE의 무선 설정을 새 셀/새 구성으로 재설정합니다(예: 측정 설정 변경, DRB/PDCP 파라미터, 보안/키 갱신, 목표 셀 접속을 위한 이동성 제어 정보 등).",
+        "expected_keywords": [
+            "handover",
+            "RRCReconfiguration",
+            "radio bearer",
+            "PDCP",
+            "security",
+            "mobility control"
+        ]
+    },
+    {
+        "id": 15,
+        "domain": "RRC 절차 및 메시지",
+        "difficulty": "Hard",
+        "question": "'RRC Re-establishment' 절차는 어떤 상황에서 발생하나요?",
+        "answer": "주로 Radio Link Failure(RLF), 핸드오버 실패, 무결성 실패(Integrity check failure) 등으로 기존 연결을 유지할 수 없을 때 발생합니다. UE는 re-establishment 요청을 통해 기존 컨텍스트(특히 DRB/보안 등)를 최대한 재사용하며 연결을 복구하려고 합니다.",
+        "expected_keywords": [
+            "RRC re-establishment",
+            "RLF",
+            "handover failure",
+            "integrity failure",
+            "connection recovery"
+        ]
+    },
+    {
+        "id": 16,
+        "domain": "RRC 절차 및 메시지",
+        "difficulty": "Medium",
+        "question": "Measurement Report가 트리거되는 Event A1~A6 중 가장 대표적인 것 하나를 설명하세요.",
+        "answer": "대표적으로 Event A3는 '이웃 셀이 서빙 셀보다 오프셋만큼 더 좋을 때' 트리거되어 핸드오버 후보를 알립니다. 히스테리시스와 Time-to-Trigger(TTT)로 핑퐁을 줄입니다.",
+        "expected_keywords": [
+            "Event A3",
+            "neighbor better than serving",
+            "offset",
+            "hysteresis",
+            "TTT",
+            "handover"
+        ]
+    },
+    {
+        "id": 17,
+        "domain": "RRC 절차 및 메시지",
+        "difficulty": "Medium",
+        "question": "B1, B2 Event는 어떤 상황(Inter-RAT 등)에서 사용되나요?",
+        "answer": "B1/B2는 주로 Inter-RAT 측정/이동성을 위한 이벤트입니다. 예를 들어 LTE↔NR, LTE↔UTRAN/GERAN 같은 이종 RAT 후보가 특정 임계치를 만족(B1)하거나, 서빙 셀 품질이 나빠지면서 이종 RAT 후보가 조건을 만족(B2)할 때 보고를 트리거합니다.",
+        "expected_keywords": [
+            "Event B1",
+            "Event B2",
+            "inter-RAT",
+            "threshold",
+            "mobility"
+        ]
+    },
+    {
+        "id": 18,
+        "domain": "RRC 절차 및 메시지",
+        "difficulty": "Medium",
+        "question": "RRC 메시지 전송 시 무결성 보호(Integrity Protection)는 어디서 담당하나요?",
+        "answer": "무결성 보호(및 암호화)는 AS 보안에서 주로 PDCP 계층이 담당합니다(SRB에 대해 무결성 알고리즘 적용). 키/알고리즘 협상은 상위 절차(보안 모드/재구성)로 설정되고, 실제 적용은 PDCP에서 수행됩니다.",
+        "expected_keywords": [
+            "integrity protection",
+            "PDCP",
+            "AS security",
+            "SRB",
+            "ciphering"
+        ]
+    },
+    {
+        "id": 19,
+        "domain": "RRC 절차 및 메시지",
+        "difficulty": "Medium",
+        "question": "SI(System Information) 요청 시 'On-demand SI' 방식의 장점은?",
+        "answer": "필요한 UE가 필요할 때만 특정 SI를 요청/수신하므로, 항상 브로드캐스트하는 방식 대비 (1) 공중자원/방송 부하 감소, (2) 셀 내 트래픽 상황에 따라 유연한 제공, (3) 드물게 필요한 SI의 효율적 전달이 가능합니다.",
+        "expected_keywords": [
+            "on-demand SI",
+            "broadcast load reduction",
+            "air interface efficiency",
+            "flexible delivery"
+        ]
+    },
+    {
+        "id": 20,
+        "domain": "RRC 절차 및 메시지",
+        "difficulty": "Medium",
+        "question": "단말이 기지국으로 전송하는 'UE Capability Enquiry'의 목적은 무엇인가요?",
+        "answer": "정확히는 'UE Capability Enquiry'는 보통 기지국이 UE에게 보내는 질의 메시지이고, UE는 'UE Capability Information'으로 응답합니다. 목적은 UE가 지원하는 밴드/CA/모듈레이션/MIMO/NR 기능 등 단말 능력을 파악하여 최적의 RRC 설정과 베어러/QoS 구성을 하기 위함입니다.",
+        "expected_keywords": [
+            "UE Capability Enquiry",
+            "UE Capability Information",
+            "supported bands",
+            "CA",
+            "MIMO",
+            "feature negotiation"
+        ]
+    },
+    {
+        "id": 21,
+        "domain": "NAS 계층 및 프로토콜",
+        "difficulty": "Easy",
+        "question": "NAS 계층은 단말(UE)과 어느 네트워크 노드 사이의 프로토콜인가요?",
+        "answer": "NAS는 코어망 제어평면 프로토콜로, 5G에서는 UE와 AMF 사이(그리고 세션 관리 관련은 SMF 연동), LTE에서는 UE와 MME 사이에서 동작합니다. 무선 구간에서는 RRC를 통해 투명하게 운반됩니다.",
+        "expected_keywords": [
+            "NAS",
+            "UE",
+            "AMF",
+            "MME",
+            "core network",
+            "control plane"
+        ]
+    },
+    {
+        "id": 22,
+        "domain": "NAS 계층 및 프로토콜",
+        "difficulty": "Medium",
+        "question": "NAS의 두 가지 주요 서브 계층인 5GMM과 5GSM의 차이는 무엇인가요?",
+        "answer": "5GMM(5G Mobility Management)은 등록/인증/보안/이동성 등 '단말-코어 제어'를 담당하고, 5GSM(5G Session Management)은 PDU Session 생성/수정/해제, QoS/정책 적용 등 '세션(데이터 연결) 관리'를 담당합니다.",
+        "expected_keywords": [
+            "5GMM",
+            "5GSM",
+            "registration",
+            "security",
+            "mobility",
+            "PDU session"
+        ]
+    },
+    {
+        "id": 23,
+        "domain": "NAS 계층 및 프로토콜",
+        "difficulty": "Medium",
+        "question": "5GMM(Mobility Management)의 주요 기능은 무엇인가요?",
+        "answer": "주요 기능은 (1) Registration/Update, (2) 인증 및 NAS 보안 설정(SMC), (3) 이동성/위치 관리(TAI/Tracking Area, paging), (4) 연결관리(CM 상태, Service Request), (5) AMF 관리(재할당 등)입니다.",
+        "expected_keywords": [
+            "5GMM",
+            "registration",
+            "authentication",
+            "NAS security",
+            "paging",
+            "service request",
+            "AMF"
+        ]
+    },
+    {
+        "id": 24,
+        "domain": "NAS 계층 및 프로토콜",
+        "difficulty": "Medium",
+        "question": "5GSM(Session Management)이 관리하는 핵심 개체는 무엇인가요? (예: PDU Session)",
+        "answer": "핵심 개체는 PDU Session이며, 그 안에서 QoS Flow, S-NSSAI(슬라이스), DNN, SSC mode, UPF 앵커 정보, 5GSM 상태 및 관련 타이머/절차를 관리합니다.",
+        "expected_keywords": [
+            "5GSM",
+            "PDU Session",
+            "QoS Flow",
+            "S-NSSAI",
+            "DNN",
+            "SSC mode",
+            "UPF"
+        ]
+    },
+    {
+        "id": 25,
+        "domain": "NAS 계층 및 프로토콜",
+        "difficulty": "Easy",
+        "question": "Registration 절차(Initial Registration)는 LTE의 어떤 절차와 유사한가요?",
+        "answer": "5G의 Initial Registration은 LTE의 Attach(초기 접속) 절차와 유사합니다(가입자 인증, 보안 설정, 위치/등록, 기본 세션 준비 등 관점에서).",
+        "expected_keywords": [
+            "initial registration",
+            "LTE attach",
+            "authentication",
+            "security",
+            "registration"
+        ]
+    },
+    {
+        "id": 26,
+        "domain": "NAS 계층 및 프로토콜",
+        "difficulty": "Medium",
+        "question": "NAS Security Mode Control(SMC) 절차가 수행하는 보안 기능 2가지는?",
+        "answer": "SMC는 (1) NAS 무결성 보호와 (2) NAS 암호화(기밀성) 적용을 설정/활성화합니다. 또한 사용할 알고리즘 선택과 NAS 보안 컨텍스트 활성화를 포함합니다.",
+        "expected_keywords": [
+            "SMC",
+            "NAS integrity",
+            "NAS ciphering",
+            "algorithm selection",
+            "security context"
+        ]
+    },
+    {
+        "id": 27,
+        "domain": "NAS 계층 및 프로토콜",
+        "difficulty": "Medium",
+        "question": "SUCI와 SUPI의 차이점과 보안상의 이점을 설명하세요.",
+        "answer": "SUPI는 가입자 영구 식별자(예: IMSI 계열)이고, SUCI는 SUPI를 공개키 기반으로 은닉/암호화한 'concealed identifier'입니다. SUCI를 사용하면 무선 구간에서 영구 식별자가 노출되는 것을 줄여 IMSI catcher 같은 추적/도청 위험을 완화합니다.",
+        "expected_keywords": [
+            "SUPI",
+            "SUCI",
+            "IMSI",
+            "concealed identifier",
+            "public key",
+            "IMSI catcher"
+        ]
+    },
+    {
+        "id": 28,
+        "domain": "NAS 계층 및 프로토콜",
+        "difficulty": "Medium",
+        "question": "AMF(Access and Mobility Management Function)의 NAS 관련 역할을 설명하세요.",
+        "answer": "AMF는 NAS 종단 노드로서 Registration/Service Request 처리, 인증·보안(SMC) 절차 조정, 이동성/위치 관리(TAI, paging), UE 컨텍스트 관리 및 필요 시 SMF/PCF 등과 연동해 세션/정책 처리를 트리거합니다.",
+        "expected_keywords": [
+            "AMF",
+            "NAS endpoint",
+            "registration",
+            "paging",
+            "UE context",
+            "SMF",
+            "PCF"
+        ]
+    },
+    {
+        "id": 29,
+        "domain": "NAS 계층 및 프로토콜",
+        "difficulty": "Medium",
+        "question": "단말이 휴면 상태일 때 위치 갱신을 위해 수행하는 절차는?",
+        "answer": "5G에서는 CM-IDLE(무선으로는 주로 RRC_IDLE/INACTIVE)에서 주기적 또는 이동 기반으로 Registration Update(예: periodic registration update)를 수행해 위치/등록 정보를 갱신합니다(LTE의 TAU 개념과 유사).",
+        "expected_keywords": [
+            "periodic registration update",
+            "registration update",
+            "CM-IDLE",
+            "RRC_IDLE",
+            "RRC_INACTIVE",
+            "TAU"
+        ]
+    },
+    {
+        "id": 30,
+        "domain": "NAS 계층 및 프로토콜",
+        "difficulty": "Medium",
+        "question": "NAS 계층에서 'Deregistration'이 일어나는 시나리오는 무엇인가요?",
+        "answer": "UE 전원 종료/비행기 모드/USIM 제거 같은 단말 주도 해지, 네트워크 정책/가입자 상태 변화에 따른 네트워크 주도 해지, 또는 오류/보안 사유로 등록 해제가 필요할 때 Deregistration 절차가 발생합니다.",
+        "expected_keywords": [
+            "deregistration",
+            "UE initiated",
+            "network initiated",
+            "power off",
+            "policy",
+            "subscription"
+        ]
+    },
+    {
+        "id": 31,
+        "domain": "RRC-NAS 상호작용 및 세션 관리",
+        "difficulty": "Medium",
+        "question": "NAS 메시지는 RRC 메시지의 어떤 필드에 실려서 전달되나요?",
+        "answer": "NAS 메시지는 RRC의 NAS 전용 컨테이너(예: dedicatedInfoNAS / dedicatedNAS-Message) 필드에 실려 전달됩니다. 예를 들어 초기 접속에선 RRCSetupComplete에 NAS가 포함될 수 있고, 이후엔 UL/DL Information Transfer로 운반됩니다.",
+        "expected_keywords": [
+            "dedicatedInfoNAS",
+            "dedicatedNAS-Message",
+            "RRCSetupComplete",
+            "ULInformationTransfer",
+            "DLInformationTransfer"
+        ]
+    },
+    {
+        "id": 32,
+        "domain": "RRC-NAS 상호작용 및 세션 관리",
+        "difficulty": "Hard",
+        "question": "PDU Session 구축 시 NAS와 RRC는 각각 어떤 설정을 수행하나요?",
+        "answer": "NAS(5GSM)는 PDU Session Establishment로 DNN, S-NSSAI, QoS 규칙/Flow, SSC mode, UPF 앵커 등 '세션 논리'를 협상합니다. RRC는 그 결과를 반영해 무선 베어러(DRB) 생성/수정, PDCP/RLC/MAC 파라미터, QoS 관련 무선 설정(예: DRB QoS, SDAP 연동)을 구성하여 실제 무선 전송이 가능하게 합니다.",
+        "expected_keywords": [
+            "PDU Session Establishment",
+            "5GSM",
+            "DRB",
+            "SDAP",
+            "QoS Flow",
+            "PDCP",
+            "RLC"
+        ]
+    },
+    {
+        "id": 33,
+        "domain": "RRC-NAS 상호작용 및 세션 관리",
+        "difficulty": "Hard",
+        "question": "QoS Flow와 Data Radio Bearer(DRB)의 매핑 관계를 설명하세요.",
+        "answer": "5G에서 QoS Flow는 코어-무선 전체 QoS 단위이고, 무선 구간에서는 DRB가 전송 단위입니다. 일반적으로 하나의 DRB에 하나 이상의 QoS Flow가 매핑될 수 있으며(특히 Non-GBR 등), SDAP이 QoS Flow ID(QFI)를 기반으로 적절한 DRB로 분류/매핑합니다.",
+        "expected_keywords": [
+            "QoS Flow",
+            "DRB",
+            "mapping",
+            "SDAP",
+            "QFI",
+            "one-to-many"
+        ]
+    },
+    {
+        "id": 34,
+        "domain": "RRC-NAS 상호작용 및 세션 관리",
+        "difficulty": "Medium",
+        "question": "Service Request 절차가 시작되는 원인은 무엇인가요?",
+        "answer": "UE가 CM-IDLE(무선은 대개 RRC_IDLE/INACTIVE) 상태에서 (1) 상향 데이터/시그널링이 발생했거나, (2) 네트워크가 하향 데이터가 있어 페이징으로 UE를 깨운 경우, 또는 (3) 특정 정책/절차(예: 긴급, 우선 접속)가 필요할 때 Service Request가 시작됩니다.",
+        "expected_keywords": [
+            "service request",
+            "CM-IDLE",
+            "uplink data",
+            "paging",
+            "downlink data",
+            "emergency"
+        ]
+    },
+    {
+        "id": 35,
+        "domain": "RRC-NAS 상호작용 및 세션 관리",
+        "difficulty": "Easy",
+        "question": "단말이 5G Core에 접속하기 위해 가장 먼저 성공해야 하는 RRC 절차는?",
+        "answer": "5G Core와 NAS 절차(Registration 등)를 수행하려면 먼저 RRC 연결을 확보해야 합니다. IDLE에서는 RRC Setup(연결 설정), INACTIVE에서는 RRC Resume(연결 재개)이 선행되어 SRB1이 마련되어야 NAS 메시지를 운반할 수 있습니다.",
+        "expected_keywords": [
+            "RRC Setup",
+            "RRC Resume",
+            "SRB1",
+            "registration",
+            "NAS transport"
+        ]
+    },
+    {
+        "id": 36,
+        "domain": "RRC-NAS 상호작용 및 세션 관리",
+        "difficulty": "Medium",
+        "question": "'Tracking Area Update'와 RRC 상태 변화의 상관관계는?",
+        "answer": "TAU(LTE) 또는 Registration Update(5G)는 보통 무선이 IDLE/INACTIVE일 때 필요 조건(이동·타이머 등)이 충족되면 수행됩니다. 이때 NAS를 보내기 위해 UE는 RRC Setup/Resume로 CONNECTED를 잠깐 확보한 뒤 절차 완료 후 다시 IDLE/INACTIVE로 해제될 수 있습니다.",
+        "expected_keywords": [
+            "TAU",
+            "registration update",
+            "RRC state",
+            "setup",
+            "resume",
+            "release"
+        ]
+    },
+    {
+        "id": 37,
+        "domain": "RRC-NAS 상호작용 및 세션 관리",
+        "difficulty": "Medium",
+        "question": "NAS 계층에서의 Reject 원인 코드(Cause Code)는 어떤 의미를 갖나요?",
+        "answer": "Reject의 Cause Code는 네트워크가 요청을 거부한 이유를 표준화된 값으로 알려 UE가 적절한 후속 동작(재시도/금지 타이머 적용/다른 절차 수행/사용자 알림 등)을 하도록 하는 정보입니다(예: 인증 실패, 서비스/슬라이스 미허용, 혼잡, 로밍 제한 등).",
+        "expected_keywords": [
+            "reject cause",
+            "cause code",
+            "backoff",
+            "timer",
+            "congestion",
+            "not allowed"
+        ]
+    },
+    {
+        "id": 38,
+        "domain": "RRC-NAS 상호작용 및 세션 관리",
+        "difficulty": "Medium",
+        "question": "Slice(S-NSSAI) 정보는 RRC와 NAS 중 어디에서 우선적으로 처리되나요?",
+        "answer": "슬라이스 선택/요청의 본체는 NAS(Registration, PDU Session Establishment 등)에서 우선적으로 처리되어 AMF/SMF가 선택을 수행합니다. RRC는 결과를 반영해 무선 베어러/QoS 구성을 적용하고, 필요한 경우 RAN 측 지원 슬라이스 정보와 매칭해 자원을 할당합니다.",
+        "expected_keywords": [
+            "S-NSSAI",
+            "slice selection",
+            "NAS",
+            "AMF",
+            "SMF",
+            "RAN resource"
+        ]
+    },
+    {
+        "id": 39,
+        "domain": "RRC-NAS 상호작용 및 세션 관리",
+        "difficulty": "Hard",
+        "question": "Emergency Setup 시 RRC와 NAS의 우선순위 처리 방식은?",
+        "answer": "Emergency는 접속 원인(establishment cause=emergency)과 우선순위가 높게 취급되어 접근바링을 우회/완화할 수 있습니다. RRC는 긴급 접속을 위한 빠른 연결 확보 및 우선 스케줄링을 지원하고, NAS는 긴급 Registration/세션(예: Emergency PDU Session) 관련 절차를 우선 수행하여 서비스 가능성을 높입니다.",
+        "expected_keywords": [
+            "emergency",
+            "establishment cause",
+            "access barring",
+            "priority",
+            "emergency registration",
+            "PDU session"
+        ]
+    },
+    {
+        "id": 40,
+        "domain": "RRC-NAS 상호작용 및 세션 관리",
+        "difficulty": "Hard",
+        "question": "Connection Establishment Failure 시 NAS가 재시도하는 로직은?",
+        "answer": "RRC Setup/Resume 실패로 NAS 전송이 불가하면 UE는 원인에 따라 (1) 즉시 재시도(재선택/다른 셀 시도), (2) 액세스 바링/혼잡 관련이면 표준 타이머(예: backoff/extended wait time) 적용 후 재시도, (3) 인증/등록 거부면 원인 코드에 따른 재시도 금지/지연을 수행합니다. 즉 '원인 기반 셀/주파수 변경 + 타이머 기반 백오프'가 핵심입니다.",
+        "expected_keywords": [
+            "connection failure",
+            "retry",
+            "cell reselection",
+            "access barring",
+            "backoff timer",
+            "cause code"
+        ]
+    },
+    {
+        "id": 41,
+        "domain": "실무 및 트러블슈팅",
+        "difficulty": "Hard",
+        "question": "'RRC Connection Setup Failure'의 주요 원인 3가지는?",
+        "answer": "대표 원인 3가지는 (1) 무선 품질 불량/커버리지 문제(낮은 RSRP/RSRQ/SINR로 메시지 교환 실패), (2) RACH/접속 혼잡 또는 접근바링(랜덤액세스 충돌/과부하), (3) 설정/호환 문제(셀 파라미터·주파수·보안/능력 불일치, 타이머 만료 등)입니다.",
+        "expected_keywords": [
+            "RRC setup failure",
+            "radio condition",
+            "RSRP",
+            "RACH congestion",
+            "access barring",
+            "timer expiry"
+        ]
+    },
+    {
+        "id": 42,
+        "domain": "실무 및 트러블슈팅",
+        "difficulty": "Hard",
+        "question": "NAS 인증(Authentication) 실패 시 어떤 메시지가 전송되나요?",
+        "answer": "인증이 실패하면 네트워크는 보통 NAS 계층의 Authentication Reject 또는 관련 reject/cause를 포함한 메시지를 전송하여 절차를 종료합니다(상황에 따라 등록/서비스 요청도 Reject로 이어질 수 있음).",
+        "expected_keywords": [
+            "authentication failure",
+            "Authentication Reject",
+            "NAS",
+            "cause",
+            "reject"
+        ]
+    },
+    {
+        "id": 43,
+        "domain": "실무 및 트러블슈팅",
+        "difficulty": "Hard",
+        "question": "단말 로그에서 'Radio Link Failure(RLF)'가 관찰되었다면 RRC 계층의 동작은?",
+        "answer": "RLF가 감지되면 UE는 (1) 연결 복구 시도(예: RRC Re-establishment 트리거), (2) 실패 시 RRC 연결 해제 및 IDLE로 전이, (3) 원인/측정 결과를 RLF 리포트(가능 시)로 남기고, 이후 셀 재선택을 수행합니다. 네트워크는 UE 컨텍스트 정리 및 재접속을 대비합니다.",
+        "expected_keywords": [
+            "RLF",
+            "RRC re-establishment",
+            "release to idle",
+            "cell reselection",
+            "RLF report"
+        ]
+    },
+    {
+        "id": 44,
+        "domain": "실무 및 트러블슈팅",
+        "difficulty": "Hard",
+        "question": "Beam Failure Recovery와 RRC Re-establishment의 차이점은?",
+        "answer": "Beam Failure Recovery(BFR)는 주로 PHY/MAC 수준에서 빔(링크) 장애를 감지하고 새로운 빔으로 빠르게 복구하는 절차로, RRC 연결을 유지한 채 수행됩니다. 반면 RRC Re-establishment는 RLF/핸드오버 실패 등으로 연결이 깨졌을 때 RRC 수준에서 연결을 재구축/복구하는 절차로 영향 범위가 더 큽니다.",
+        "expected_keywords": [
+            "beam failure recovery",
+            "BFR",
+            "PHY",
+            "MAC",
+            "RRC re-establishment",
+            "RLF"
+        ]
+    },
+    {
+        "id": 45,
+        "domain": "실무 및 트러블슈팅",
+        "difficulty": "Hard",
+        "question": "NSA(Non-Standalone) 모드와 SA(Standalone) 모드에서 RRC 메시지의 차이점은?",
+        "answer": "NSA(예: EN-DC)에서는 LTE eNB가 마스터로 RRC를 주도하며, NR 관련 설정이 LTE RRC 메시지(예: 재구성)에 'Secondary Cell Group' 형태로 포함되어 전달되는 경우가 많습니다. SA에서는 UE와 NR gNB 사이에 NR RRC가 직접 종단되어 NR RRC 메시지로 설정/제어가 이루어집니다.",
+        "expected_keywords": [
+            "NSA",
+            "SA",
+            "EN-DC",
+            "master node",
+            "secondary cell group",
+            "NR RRC"
+        ]
+    },
+    {
+        "id": 46,
+        "domain": "실무 및 트러블슈팅",
+        "difficulty": "Hard",
+        "question": "5G NR에서 'Anchoring' 개념과 NAS 연결의 관계는?",
+        "answer": "Anchoring은 제어평면/세션의 기준이 되는 앵커 노드/망을 의미하며, 특히 NSA에서는 LTE 앵커(MN)를 통해 NAS가 운반되고 NR은 보조 전송로(SN)로 동작하는 구조가 흔합니다. 즉 앵커가 NAS 신호(등록/세션 등)의 경로와 코어망 연동 방식을 사실상 결정합니다(옵션 구성에 따라 EPC/5GC 연동이 달라짐).",
+        "expected_keywords": [
+            "anchoring",
+            "NSA",
+            "LTE anchor",
+            "MN",
+            "NAS transport",
+            "EPC",
+            "5GC"
+        ]
+    },
+    {
+        "id": 47,
+        "domain": "실무 및 트러블슈팅",
+        "difficulty": "Hard",
+        "question": "가입자 식별 문제 발생 시 NAS 계층에서 확인해야 할 파라미터는?",
+        "answer": "대표적으로 (1) SUPI/IMSI 또는 SUCI 형식/암호화(홈 네트워크 공개키, routing indicator 등), (2) 임시 식별자(5G-GUTI/temporary ID) 일관성, (3) PLMN(MCC/MNC) 및 로밍/가입자 상태, (4) 인증 관련 식별/컨텍스트(예: 보안 컨텍스트 ID) 매칭을 확인합니다.",
+        "expected_keywords": [
+            "SUPI",
+            "SUCI",
+            "IMSI",
+            "5G-GUTI",
+            "PLMN",
+            "MCC",
+            "MNC",
+            "routing indicator",
+            "security context"
+        ]
+    },
+    {
+        "id": 48,
+        "domain": "실무 및 트러블슈팅",
+        "difficulty": "Hard",
+        "question": "핸드오버 실패 시 'Ping-pong' 현상을 방지하기 위한 RRC 파라미터는?",
+        "answer": "주로 측정 이벤트 파라미터에서 오프셋/히스테리시스와 Time-to-Trigger(TTT), 그리고 L3 필터링(측정 필터 계수)을 조정합니다. 예: Event A3 offset/ hysteresis를 키우고 TTT를 늘리면 빈번한 왕복 핸드오버를 줄일 수 있습니다.",
+        "expected_keywords": [
+            "ping-pong",
+            "hysteresis",
+            "TTT",
+            "Event A3 offset",
+            "L3 filtering"
+        ]
+    },
+    {
+        "id": 49,
+        "domain": "실무 및 트러블슈팅",
+        "difficulty": "Medium",
+        "question": "단말의 전력 효율을 높이기 위한 'Connected Mode DRX' 설정은 어느 계층에서 하나요?",
+        "answer": "Connected mode DRX는 RRC가 drx-Config 등을 통해 설정을 신호하고, MAC이 실제 DRX 동작(온듀레이션/슬립/웨이크업)을 수행합니다. 즉 '설정은 RRC, 실행은 MAC'으로 이해하면 됩니다.",
+        "expected_keywords": [
+            "connected mode DRX",
+            "RRC",
+            "drx-Config",
+            "MAC",
+            "power saving"
+        ]
+    },
+    {
+        "id": 50,
+        "domain": "실무 및 트러블슈팅",
+        "difficulty": "Hard",
+        "question": "5G Core망(AMF) 변경 시 발생하는 NAS 절차의 특징은?",
+        "answer": "이동/부하분산 등으로 AMF가 바뀌면 UE는 Registration Update 과정에서 AMF 재할당(AMF reallocation) 또는 UE 컨텍스트 재배치가 발생할 수 있습니다. 이때 기존 보안/세션 컨텍스트가 전송·동기화되고, 필요 시 보안 컨텍스트 갱신이나 PDU Session 컨텍스트(연동 SMF) 재연결이 동반되는 것이 특징입니다.",
+        "expected_keywords": [
+            "AMF change",
+            "AMF reallocation",
+            "registration update",
+            "UE context transfer",
+            "security context",
+            "PDU session context"
+        ]
+    }
+]

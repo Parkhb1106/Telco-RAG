@@ -19,9 +19,9 @@ def load_jsonl(path: Path) -> List[Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Convert a JSONL file to a JSON array file.")
     default_dataset_path = Path(__file__).resolve().parent / "inputs"
-    parser.add_argument("path", type=Path, default=str(default_dataset_path))
-    parser.add_argument("input", type=Path, help="Input .jsonl name")
-    parser.add_argument("output", type=Path, default=None, help="Output .json name (default: same name as input with .json extension)")
+    parser.add_argument("--path", type=Path, default=str(default_dataset_path))
+    parser.add_argument("--input", type=Path, help="Input .jsonl name")
+    parser.add_argument("--output", type=Path, default=None, help="Output .json name (default: same name as input with .json extension)")
     parser.add_argument(
         "--indent",
         type=int,
