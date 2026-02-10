@@ -28,7 +28,7 @@ async def TelcoRAG(
     options=None,
     model_name='gpt-4o-mini',
     xlsx_file: str | None = None,
-    max_sample_rows: int = 5,
+    max_sample_rows: int = 2000,
     max_scan_rows: int = 2000,
 ):
     try:
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     ap.add_argument("--xlsx-input-dir", "-xid", type=str, default=None, help="Directory containing .xlsx files")
     ap.add_argument("--xlsx-input-glob", type=str, default="*.xlsx", help="Glob pattern for xlsx files")
     ap.add_argument("--xlsx-output-dir", "-xod", type=str, default=str(base_dir / "outputs"), help="Output directory for xlsx mode")
-    ap.add_argument("--max-sample-rows", type=int, default=5, help="Max non-empty samples per column for LLM prompt")
+    ap.add_argument("--max-sample-rows", type=int, default=2000, help="Max non-empty samples per column for LLM prompt")
     ap.add_argument("--max-scan-rows", type=int, default=2000, help="Max rows scanned from xlsx")
     ap.add_argument("--without-RAG", action="store_true", help="LLM only mode")
     args = ap.parse_args()
