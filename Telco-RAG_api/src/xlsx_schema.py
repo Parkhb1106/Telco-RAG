@@ -149,7 +149,7 @@ def _parse_cell_value(cell: ET.Element, shared_strings: List[str]) -> str:
 
 def extract_xlsx_preview(
     xlsx_path: str,
-    max_sample_rows: int = 5,
+    max_sample_rows: int = 2000,
     max_scan_rows: int = 2000,
 ) -> Dict[str, Any]:
     if max_sample_rows < 1:
