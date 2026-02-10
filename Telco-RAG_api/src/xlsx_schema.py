@@ -4,6 +4,7 @@ import zipfile
 import posixpath
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Tuple
+from src.query import Query
 
 try:
     import ujson as jsonlib
@@ -255,39 +256,15 @@ def extract_xlsx_preview(
 
 def _build_rag_query(preview: Dict[str, Any]) -> str:
     columns = preview["column_names"]
-    snippet = ", ".join(columns[:12])
-    continuation = ""
-    if len(columns) > 12:
-        continuation = f", and {len(columns) - 12} more columns"
-    return (
-        f"The Excel dataset {preview['file_name']} contains {len(columns)} KPI columns including "
-        f"{snippet}{continuation}. Describe typical definitions, units, and layers for such columns so I can produce a data dictionary."
-    )
+    snippet = " | ".join(columns)
+    return snippet
 
 
-def _collect_rag_context(preview: Dict[str, Any], model_name: str) -> str:
-    question_text = _build_rag_query(preview)
-    question = Query(question_text, [])
-    question.def_TA_question()
-    semantic_search = question.get_custom_context(k=10, model_name=model_name, validate_flag=False)
-    keyword_search = question.get_custom_context_keyword(k=10)
-    question.fusion_context(
-        semantic_search=semantic_search,
-        keyword_search=keyword_search,
-        model_name=model_name,
-        validate_flag=False,
-    )
-    return "\n".join(question.context)
-
-
-def _build_schema_prompt(preview: Dict[str, Any]) -> str:
+def _build_schema_prompt(question, preview: Dict[str, Any]) -> str:
     columns_json = jsonlib.dumps(preview["columns"], ensure_ascii=False, indent=2)
-    context_section = ""
-    context_text = preview.get("rag_context", "").strip()
-    if context_text:
-        context_section = f"\nContext:\n{context_text}\n"
+    content = '\n'.join(question.context)
     return f"""
-You are a telecom KPI data dictionary expert.
+You are a telecom data expert.
 
 Given an Excel file profile, produce a strict JSON object.
 
@@ -297,7 +274,10 @@ Rows scanned: {preview["rows_scanned"]}
 Rows containing any data: {preview["rows_with_data"]}
 Columns:
 {columns_json}
-{context_section}
+
+Considering the following context:
+{question.query}
+{content}
 
 Output requirements:
 1) Output must be a valid JSON object only.
@@ -383,29 +363,3 @@ def _normalize_schema(
         summary_text = fallback_summary
     output["summary"] = summary_text
     return output
-
-
-def analyze_xlsx_with_llm(
-    xlsx_path: str,
-    model_name: str,
-    max_sample_rows: int = 5,
-    max_scan_rows: int = 2000,
-) -> Tuple[Dict[str, Any], Dict[str, Any], str]:
-    from src.LLMs.LLM import submit_prompt_flex
-
-    preview = extract_xlsx_preview(
-        xlsx_path=xlsx_path,
-        max_sample_rows=max_sample_rows,
-        max_scan_rows=max_scan_rows,
-    )
-    preview["rag_context"] = _collect_rag_context(preview, model_name)
-    prompt = _build_schema_prompt(preview)
-    llm_raw = submit_prompt_flex(prompt, model=model_name, output_json=True)
-    parsed = _load_json_object(llm_raw)
-
-    fallback_summary = (
-        f'{preview["file_name"]} contains {preview["column_count"]} columns. '
-        "This summary was auto-generated because model output did not include a summary."
-    )
-    normalized = _normalize_schema(parsed, preview["column_names"], fallback_summary)
-    return normalized, preview, llm_raw

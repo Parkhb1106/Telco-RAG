@@ -2,9 +2,9 @@ import os
 from pathlib import Path
 import traceback
 from src.query import Query
-from src.generate import generate, check_question
+from src.generate import generate, check_question, analyze_xlsx
 from src.LLMs.LLM import submit_prompt_flex
-from src.xlsx_schema import analyze_xlsx_with_llm
+from src.xlsx_schema import extract_xlsx_preview, _build_rag_query
 import git
 import asyncio
 import time
@@ -34,23 +34,39 @@ async def TelcoRAG(
     try:
         start =  time.time()
         if xlsx_file:
-            normalized_schema, preview, llm_raw = analyze_xlsx_with_llm(
-                xlsx_path=xlsx_file,
-                model_name=model_name,
+            preview = extract_xlsx_preview(
+                xlsx_path=xlsx_path,
                 max_sample_rows=max_sample_rows,
                 max_scan_rows=max_scan_rows,
             )
+            
+            question_text = _build_rag_query(preview)
+            question = Query(question_text, [])
+            
+            question.def_TA_question(isxlsx = True)
+            
+            semantic_search = question.get_custom_context(k=10, model_name=model_name, validate_flag=False)
+            keyword_search = question.get_custom_context_keyword(k=10)
+            question.fusion_context(semantic_search=semantic_search, keyword_search=keyword_search, k=5, semantic_weight=1.0, keyword_weight=1.5, model_name=model_name, validate_flag=False)
+            
+            preview["context"] = question.context
+            
+            normalized_schema, preview, llm_raw = analyze_xlsx(
+                question=question,
+                preview=preview,
+                model_name=model_name,
+            )
+            
             end = time.time()
             print(f"[XLSX] Generation took {end-start:.2f} seconds")
             return normalized_schema, preview, llm_raw
+        
         question = Query(query, [])
 
         query = question.question # Query 객체에서 원본 질문 문자열을 꺼내서 로컬 변수 query에 복사
         conciseprompt=f"""Rephrase the question to be clear and concise:
         
         {question.question}"""
-
-       
         concisequery = submit_prompt_flex(conciseprompt, model=model_name).rstrip('"') # 질문을 더 간단하고 명확하게
         print(concisequery)
         question.query = concisequery # 약어, 통신 표준 용어가 붙음.
@@ -130,10 +146,10 @@ if __name__ == "__main__":
     ap.add_argument("--answer", type=str, default=None)
     ap.add_argument("--options", type=str, default=None, help="JSON string for options dict")
     ap.add_argument("--model-name", type=str, default="Qwen/Qwen3-30B-A3B-Instruct-2507")
-    ap.add_argument("--input-file", type=str, default=None, help="Single .xlsx file path")
-    ap.add_argument("--input-dir", type=str, default=None, help="Directory containing .xlsx files")
-    ap.add_argument("--input-glob", type=str, default="*.xlsx", help="Glob pattern for xlsx files")
-    ap.add_argument("--output-dir", type=str, default=str(base_dir / "outputs"), help="Output directory for xlsx mode")
+    ap.add_argument("--xlsx-input-file", "-xif", type=str, default=None, help="Single .xlsx file path")
+    ap.add_argument("--xlsx-input-dir", "-xid", type=str, default=None, help="Directory containing .xlsx files")
+    ap.add_argument("--xlsx-input-glob", type=str, default="*.xlsx", help="Glob pattern for xlsx files")
+    ap.add_argument("--xlsx-output-dir", "-xod", type=str, default=str(base_dir / "outputs"), help="Output directory for xlsx mode")
     ap.add_argument("--max-sample-rows", type=int, default=5, help="Max non-empty samples per column for LLM prompt")
     ap.add_argument("--max-scan-rows", type=int, default=2000, help="Max rows scanned from xlsx")
     ap.add_argument("--without-RAG", action="store_true", help="LLM only mode")
@@ -210,16 +226,16 @@ if __name__ == "__main__":
         print("-" * 50 + "\n")
 
     def resolve_xlsx_inputs() -> list[str]:
-        if args.input_file:
-            input_path = Path(args.input_file)
+        if args.xlsx_input_file:
+            input_path = Path(args.xlsx_input_file)
             if input_path.suffix.lower() != ".xlsx":
                 raise ValueError(f"Only .xlsx is supported: {input_path}")
             if not input_path.exists():
                 raise FileNotFoundError(f"Input file not found: {input_path}")
             return [str(input_path)]
 
-        if args.input_dir:
-            input_dir = Path(args.input_dir)
+        if args.xlsx_input_dir:
+            input_dir = Path(args.xlsx_input_dir)
         else:
             input_dir = base_dir / "inputs"
             if not input_dir.exists():
@@ -228,7 +244,7 @@ if __name__ == "__main__":
         if not input_dir.exists():
             raise FileNotFoundError(f"Input directory not found: {input_dir}")
 
-        matched = sorted(input_dir.glob(args.input_glob))
+        matched = sorted(input_dir.glob(args.xlsx_input_glob))
         return [str(path) for path in matched if path.is_file() and path.suffix.lower() == ".xlsx"]
 
     def run_xlsx_once(xlsx_path: str):
@@ -241,7 +257,7 @@ if __name__ == "__main__":
             max_scan_rows=args.max_scan_rows,
         ))
 
-        output_dir = Path(args.output_dir)
+        output_dir = Path(args.xlsx_output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / f"{Path(xlsx_path).stem}.json"
         with output_path.open("w", encoding="utf-8") as f:
@@ -254,7 +270,8 @@ if __name__ == "__main__":
         )
 
     print("=== START ===")
-    xlsx_mode_requested = bool(args.input_file or args.input_dir)
+    
+    xlsx_mode_requested = bool(args.xlsx_input_file or args.xlsx_input_dir)
     if xlsx_mode_requested:
         xlsx_targets = resolve_xlsx_inputs()
         if not xlsx_targets:
@@ -265,20 +282,15 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"[XLSX][ERROR] {xlsx_path}: {e}")
                 traceback.print_exc()
+                
     elif args.query is not None:
         opts = parse_options(args.options)
         run_once(args.query, args.answer, opts)
+        
     else:
         while True:
             try:
                 user_query = input("User Query: ").strip()
-                '''opts = [
-                    "option 1: Direct connection of 3GPP access to 5GC",
-                    "option 2: Establishment of user-plane resources over EPC",
-                    "option 3: Use of NG-RAN access for all user-plane traffic",
-                    "option 4: Exclusive use of a non-3GPP access for user-plane traffic"
-                    ]
-                answer = "option 2: Establishment of user-plane resources over EPC"'''
                 run_once(user_query, None, None)
             except KeyboardInterrupt:
                 print("\n\ndetect interrupt. program exitted.")

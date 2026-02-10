@@ -40,8 +40,11 @@ class Query:
         self.model.eval()
         self.original_labels_mapping = np.arange(21, 39)
 
-    def def_TA_question(self):
-        self.query = define_TA_question(self.query)
+    def def_TA_question(self, isxlsx = False):
+        if isxlsx:
+            _, self.query = define_TA_question(self.query)
+        else:
+            self.query, _ = define_TA_question(self.query)
         self.enhanced_query = self.query
 
     def candidate_answers(self, model_name='gpt-4o-mini', UI_flag=True):

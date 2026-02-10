@@ -98,7 +98,7 @@ def define_TA_question(sentence):
     file_path = os.path.join(resources_dir, "3GPP_vocabulary.docx")
     terms_definitions, abbreviations_definitions = read_docx(file_path)
     # add custom term, abbreviation definitions if needed
-    """
+    #"""
     custom_terms_definitions = {
         'Numerology': 'A term referring to the configuration of subcarrier spacing and cyclic prefix length, which allows 5G NR to support diverse services and frequency bands flexibly.',
         'Msg1': 'Colloquial term for the Random Access Preamble transmitted by the UE during the initial access (RACH) procedure.',
@@ -141,7 +141,7 @@ def define_TA_question(sentence):
         terms_definitions.setdefault(k, v)
     for k, v in custom_abbreviations_definitions.items():
         abbreviations_definitions.setdefault(k, v)
-    """
+    #"""
     formatted_terms, formatted_abbreviations = find_terms_and_abbreviations_in_sentence(terms_definitions, abbreviations_definitions, sentence)
     terms = '\n'.join(formatted_terms)
     abbreviations = '\n'.join(formatted_abbreviations)
@@ -152,4 +152,10 @@ Terms and Definitions:\n
 Abbreviations:\n
 {abbreviations}\n
 """
-    return question
+    dictionary = f"""Terms and Definitions:\n
+{terms}\n
+
+Abbreviations:\n
+{abbreviations}\n
+"""
+    return question, dictionary

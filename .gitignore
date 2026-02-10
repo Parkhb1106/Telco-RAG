@@ -9,6 +9,7 @@
 /data/db/meta.jsonl
 /Telco-RAG_api/outputs/
 /Telco-RAG_api/evaluation_system/outputs/
+/Telco-RAG_api/outputs/
 
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 

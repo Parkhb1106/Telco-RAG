@@ -70,7 +70,7 @@ python evaluation_system/openended_evaluation.py
 
 
 python Telco-RAG/Telco-RAG_api/pipeline_online.py \
-  --input-file Telco-RAG/Telco-RAG_api/evaluation_system/inputs/20230717143814-R8827-5GSSCVT_SVVONRO_C1_INPROG-3_I-GJ-HLOL-ENB-I001-ALL_N_3500_F20593412_DRM_1SEC.xlsx \
+  -xif Telco-RAG/Telco-RAG_api/evaluation_system/inputs/20230717143814-R8827-5GSSCVT_SVVONRO_C1_INPROG-3_I-GJ-HLOL-ENB-I001-ALL_N_3500_F20593412_DRM_1SEC.xlsx \
   --output-dir Telco-RAG/Telco-RAG_api/outputs
 
 

@@ -1,6 +1,7 @@
 import re
 import traceback
 from src.LLMs.LLM import submit_prompt_flex
+from src.xlsx_schema import _build_schema_prompt, _load_json_object, _normalize_schema
 import logging
 
 def generate(question, model_name):
@@ -143,6 +144,24 @@ def check_question(question, answer, options, model_name='gpt-4o-mini'):
             print("Wrong\n")
             print(f"The chosen one is {answer_id}, but the answer is {real_answer_id}")
             return  False, f"Option {answer_id}", context, syst_prompt
+    except Exception as e:
+        # Error handling to catch and report errors more effectively.
+        print(f"An error occurred: {e}")
+        print(traceback.format_exc())
+        return None, False
+    
+def analyze_xlsx(question, preview, model_name='gpt-4o-mini'):
+    try:
+        prompt = _build_schema_prompt(question, preview)
+        llm_raw = submit_prompt_flex(prompt, model=model_name, output_json=True)
+        parsed = _load_json_object(llm_raw)
+
+        fallback_summary = (
+            f'{preview["file_name"]} contains {preview["column_count"]} columns. '
+            "This summary was auto-generated because model output did not include a summary."
+        )
+        normalized = _normalize_schema(parsed, preview["column_names"], fallback_summary)
+        return normalized, preview, llm_raw
     except Exception as e:
         # Error handling to catch and report errors more effectively.
         print(f"An error occurred: {e}")
