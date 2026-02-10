@@ -42,6 +42,13 @@ export HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxx
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
 python /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/TeleQnA_load.py
 
+python Telco-RAG/Telco-RAG_api/evaluation_system/jsonl_to_json.py --input OPENENDED_3gpp_rag_eval_qa_100.jsonl
+python Telco-RAG/Telco-RAG_api/evaluation_system/jsonl_to_json.py --input OPENENDED_dm_se_rrc_nas_qa_dataset.jsonl
+
+
+
+
+
 cd Telco-RAG/Telco-RAG_api
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
 python evaluation_system/mcq_generation.py \
@@ -52,12 +59,6 @@ PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
 python evaluation_system/mcq_evaluation.py
 
 
-
-python Telco-RAG/Telco-RAG_api/evaluation_system/jsonl_to_json.py --input OPENENDED_3gpp_rag_eval_qa_100.jsonl
-python Telco-RAG/Telco-RAG_api/evaluation_system/jsonl_to_json.py --input OPENENDED_dm_se_rrc_nas_qa_dataset.jsonl
-
-
-
 cd Telco-RAG/Telco-RAG_api
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
 python evaluation_system/openended_generation.py \
@@ -65,8 +66,12 @@ python evaluation_system/openended_generation.py \
 
 cd Telco-RAG/Telco-RAG_api
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
-python evaluation_system/openended_evaluation.py
+python evaluation_system/openended_generation.py \
+ --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/OPENENDED_dm_se_rrc_nas_qa_dataset.json
 
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/openended_evaluation.py
 
 
 python Telco-RAG/Telco-RAG_api/pipeline_online.py \

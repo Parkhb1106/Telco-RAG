@@ -368,7 +368,7 @@ def _build_summary_prompt(
     yes_rag=True
 ) -> str:
     column_schema_json = jsonlib.dumps(column_schema, ensure_ascii=False, indent=2)
-    columns_name = {col["names"] for col in preview["columns"]}
+    columns_name = {col["name"] for col in preview["columns"]}
     
     context_section = ""
     if yes_rag:
@@ -378,8 +378,8 @@ def _build_summary_prompt(
             f"{question.query}\n\n"
             f"{content}\n\n"
             "Given a single Excel column profile, produce a strict JSON object describing only that column.\n\n"
-            "Column annotations:\n"
-            f"{column_schema_json}\n\n"
+            "Column names:\n"
+            f"{columns_name}\n\n"
         )
     
     return f"""
