@@ -277,10 +277,20 @@ def _build_column_schema_prompt(
     question,
     preview: Dict[str, Any],
     column: Dict[str, Any],
+    yes_rag = True,
 ) -> str:
     column_json = jsonlib.dumps(column, ensure_ascii=False, indent=2)
-    content = "\n".join(question.context)
+    
+    context_section = ""
+    if yes_rag:
+        content = "\n".join(question.context)
+        context_section = (
+            "Considering the following context:\n"
+            f"{question.query}\n\n"
+            f"{content}\n\n"
+        )
     return f"""
+
 You are a telecom data expert.
 
 Given a single Excel column profile, produce a strict JSON object describing only that column.
@@ -290,10 +300,9 @@ Sheet: {preview["sheet_name"]}
 Column profile:
 {column_json}
 
-Considering the following context:
-{question.query}
+{context_section}Given a single Excel column profile, produce a strict JSON object describing only that column.
 
-{content}
+Column name : {column["name"]}
 
 Output requirements:
 1) Output must be a valid JSON object only.
@@ -308,9 +317,19 @@ Output requirements:
 """.strip()
 
 
-def _build_schema_prompt(question, preview: Dict[str, Any]) -> str:
+def _build_schema_prompt(question, preview: Dict[str, Any], yes_rag=True) -> str:
     columns_json = jsonlib.dumps(preview["columns"], ensure_ascii=False, indent=2)
-    content = '\n'.join(question.context)
+    columns_name = {col["names"] for col in preview["columns"]}
+    
+    context_section = ""
+    if yes_rag:
+        content = "\n".join(question.context)
+        context_section = (
+            "Considering the following context:\n"
+            f"{question.query}\n\n"
+            f"{content}\n\n"
+        )
+    
     return f"""
 You are a telecom data expert.
 
@@ -323,10 +342,9 @@ Rows containing any data: {preview["rows_with_data"]}
 Columns:
 {columns_json}
 
-Considering the following context:
-{question.query}
+{context_section}Given a single Excel column profile, produce a strict JSON object describing only that column.
 
-{content}
+Column name : {columns_name}
 
 Output requirements:
 1) Output must be a valid JSON object only.
@@ -347,9 +365,23 @@ def _build_summary_prompt(
     question,
     preview: Dict[str, Any],
     column_schema: Dict[str, Any],
+    yes_rag=True
 ) -> str:
     column_schema_json = jsonlib.dumps(column_schema, ensure_ascii=False, indent=2)
-    content = "\n".join(question.context)
+    columns_name = {col["names"] for col in preview["columns"]}
+    
+    context_section = ""
+    if yes_rag:
+        content = "\n".join(question.context)
+        context_section = (
+            "Considering the following context:\n"
+            f"{question.query}\n\n"
+            f"{content}\n\n"
+            "Given a single Excel column profile, produce a strict JSON object describing only that column.\n\n"
+            "Column annotations:\n"
+            f"{column_schema_json}\n\n"
+        )
+    
     return f"""
 You are a telecom data expert.
 
@@ -357,17 +389,10 @@ Given an Excel file profile and per-column annotations, produce a strict JSON su
 
 File: {preview["file_name"]}
 Sheet: {preview["sheet_name"]}
-Rows scanned: {preview["rows_scanned"]}
-Rows containing any data: {preview["rows_with_data"]}
 Column annotations:
 {column_schema_json}
 
-Considering the following context:
-{question.query}
-
-{content}
-
-Output requirements:
+{context_section}Output requirements:
 1) Output must be a valid JSON object only.
 2) Output must contain exactly one top-level key: "summary".
 3) "summary" must be 2-4 sentences describing the whole file.

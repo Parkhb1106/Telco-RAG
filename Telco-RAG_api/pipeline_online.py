@@ -30,6 +30,7 @@ async def TelcoRAG(
     xlsx_file: str | None = None,
     max_sample_rows: int = 2000,
     max_scan_rows: int = 2000,
+    yes_rag = True,
 ):
     try:
         start =  time.time()
@@ -66,10 +67,11 @@ async def TelcoRAG(
 
             for idx, column in enumerate(preview["columns"], start=1):
                 column_name = column["name"]
-                print(f"[XLSX] RAG run {idx}/{total_runs} (column={column_name})")
-
-                column_query = _build_rag_query(column)
-                column_question = _run_xlsx_rag(column_query)
+                
+                if yes_rag:
+                    print(f"[XLSX] RAG run {idx}/{total_runs} (column={column_name})")
+                    column_query = _build_rag_query(column)
+                    column_question = _run_xlsx_rag(column_query)
 
                 single_column_preview = {
                     "file_name": preview["file_name"],
@@ -86,19 +88,22 @@ async def TelcoRAG(
                     preview=single_column_preview,
                     column_name=column_name,
                     model_name=model_name,
+                    yes_rag=yes_rag
                 )
                 raw_schema[column_name] = column_schema
                 llm_raw_columns[column_name] = column_llm_raw
 
-            print(f"[XLSX] RAG run {total_runs}/{total_runs} (summary)")
-            summary_query = _build_rag_query_summary(preview)
-            summary_question = _run_xlsx_rag(summary_query)
+            if yes_rag:
+                print(f"[XLSX] RAG run {total_runs}/{total_runs} (summary)")
+                summary_query = _build_rag_query_summary(preview)
+                summary_question = _run_xlsx_rag(summary_query)
             
             summary_text, summary_llm_raw = summarize_xlsx(
                 question=summary_question,
                 preview=preview,
                 column_schema=raw_schema,
                 model_name=model_name,
+                yes_rag=yes_rag
             )
             raw_schema["summary"] = summary_text
 
@@ -119,47 +124,48 @@ async def TelcoRAG(
         
         question = Query(query, [])
 
-        query = question.question # Query 객체에서 원본 질문 문자열을 꺼내서 로컬 변수 query에 복사
-        conciseprompt=f"""Rephrase the question to be clear and concise:
-        
-        {question.question}"""
-        concisequery = submit_prompt_flex(conciseprompt, model=model_name).rstrip('"') # 질문을 더 간단하고 명확하게
-        print(concisequery)
-        question.query = concisequery # 약어, 통신 표준 용어가 붙음.
+        if yes_rag:
+            query = question.question # Query 객체에서 원본 질문 문자열을 꺼내서 로컬 변수 query에 복사
+            conciseprompt=f"""Rephrase the question to be clear and concise:
+            
+            {question.question}"""
+            concisequery = submit_prompt_flex(conciseprompt, model=model_name).rstrip('"') # 질문을 더 간단하고 명확하게
+            print(concisequery)
+            question.query = concisequery # 약어, 통신 표준 용어가 붙음.
 
-        question.def_TA_question() # 질문을 주제 분류용으로 정규화/보정 : 
-        print()
-        print('#'*50)
-        print(query)
-        print('#'*50)
-        print()
+            question.def_TA_question() # 질문을 주제 분류용으로 정규화/보정 : 
+            print()
+            print('#'*50)
+            print(query)
+            print('#'*50)
+            print()
 
-        # question.get_3GPP_context(k=10, model_name=model_name, validate_flag=False) # 근거 문맥을 3GPP 문서에서 뽑아오는 단계
-        semantic_search = question.get_custom_context(k=10, model_name=model_name, validate_flag=False)
-        keyword_search= question.get_custom_context_keyword(k=10)
-        question.fusion_context(semantic_search = semantic_search, keyword_search = keyword_search, model_name=model_name, validate_flag=False)
-        
-        '''loop = asyncio.get_event_loop()
-        context_3gpp_future = loop.run_in_executor(None, question.get_custom_context, 10, model_name, False, False)
-        online_info = await question.get_online_context(model_name=model_name, validator_flag=False)
-        await context_3gpp_future
-        for online_parag in online_info:
-            question.context.append(online_parag)'''
+            # question.get_3GPP_context(k=10, model_name=model_name, validate_flag=False) # 근거 문맥을 3GPP 문서에서 뽑아오는 단계
+            semantic_search = question.get_custom_context(k=10, model_name=model_name, validate_flag=False)
+            keyword_search= question.get_custom_context_keyword(k=10)
+            question.fusion_context(semantic_search = semantic_search, keyword_search = keyword_search, model_name=model_name, validate_flag=False)
+            
+            '''loop = asyncio.get_event_loop()
+            context_3gpp_future = loop.run_in_executor(None, question.get_custom_context, 10, model_name, False, False)
+            online_info = await question.get_online_context(model_name=model_name, validator_flag=False)
+            await context_3gpp_future
+            for online_parag in online_info:
+                question.context.append(online_parag)'''
         
         if answer is not None:
-            response, response_raw, context , _ = check_question(question, answer, options, model_name=model_name) # 컨텍스트와 옵션을 포함한 프롬프트를 만들어 LLM에 답을 생성
+            response, response_raw, context , _ = check_question(question, answer, options, model_name=model_name, yes_rag=yes_rag) # 컨텍스트와 옵션을 포함한 프롬프트를 만들어 LLM에 답을 생성
             print(response_raw)
             end=time.time()
             print(f'Generation of this response took {end-start} seconds')
             return response, question.context, question.context_score
         elif options is not None:
-            response, context , _ = check_question(question, answer, options, model_name=model_name) # 컨텍스트와 옵션을 포함한 프롬프트를 만들어 LLM에 답을 생성
+            response, context , _ = check_question(question, answer, options, model_name=model_name, yes_rag=yes_rag) # 컨텍스트와 옵션을 포함한 프롬프트를 만들어 LLM에 답을 생성
             print(response)
             end=time.time()
             print(f'Generation of this response took {end-start} seconds')
             return response, question.context, question.context_score
         else:
-            response, context, _ = generate(question, model_name)
+            response, context, _ = generate(question, model_name, yes_rag=yes_rag)
             end=time.time()
             print(f'Generation of this response took {end-start} seconds')
             return response, question.context, question.context_score
@@ -189,29 +195,8 @@ if __name__ == "__main__":
     # response, context = TelcoRAG(question['question'], model_name='/NAS/inno_aidev/local_models/Qwen2.5-Coder-7B-Instruct/' )
     # print(response, '\n')
 """
-    
-#"""
 
-if __name__ == "__main__":
-    import argparse
-
-    base_dir = Path(__file__).resolve().parent
-
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--query", type=str, default=None)
-    ap.add_argument("--answer", type=str, default=None)
-    ap.add_argument("--options", type=str, default=None, help="JSON string for options dict")
-    ap.add_argument("--model-name", type=str, default="Qwen/Qwen3-30B-A3B-Instruct-2507")
-    ap.add_argument("--xlsx-input-file", "-xif", type=str, default=None, help="Single .xlsx file path")
-    ap.add_argument("--xlsx-input-dir", "-xid", type=str, default=None, help="Directory containing .xlsx files")
-    ap.add_argument("--xlsx-input-glob", type=str, default="*.xlsx", help="Glob pattern for xlsx files")
-    ap.add_argument("--xlsx-output-dir", "-xod", type=str, default=str(base_dir / "outputs"), help="Output directory for xlsx mode")
-    ap.add_argument("--max-sample-rows", type=int, default=100, help="Max non-empty samples per column for LLM prompt")
-    ap.add_argument("--max-scan-rows", type=int, default=2000, help="Max rows scanned from xlsx")
-    ap.add_argument("--without-RAG", action="store_true", help="LLM only mode")
-    args = ap.parse_args()
-
-    def parse_options(options_str):
+def parse_options(options_str):
         if options_str is None:
             return None
         options_str = options_str.strip()
@@ -243,7 +228,7 @@ if __name__ == "__main__":
             return extracted
         return [options_str]
 
-    def _to_jsonable(obj):
+def _to_jsonable(obj):
         if isinstance(obj, set):
             return sorted(obj)
         if isinstance(obj, dict):
@@ -252,7 +237,7 @@ if __name__ == "__main__":
             return [_to_jsonable(v) for v in obj]
         return obj
 
-    def run_once(query, answer, options):
+def run_once(query, answer, options, yes_rag = True):
         if not query:
             return
 
@@ -260,7 +245,8 @@ if __name__ == "__main__":
             query=query,
             answer=answer,
             options=options,
-            model_name=args.model_name
+            model_name=args.model_name,
+            yes_rag=yes_rag
         ))
         
         output_dir = os.path.join(str(base_dir / "outputs"), "pipeline_online")
@@ -281,7 +267,7 @@ if __name__ == "__main__":
         print(f"[Response]:\n{response}")
         print("-" * 50 + "\n")
 
-    def resolve_xlsx_inputs() -> list[str]:
+def resolve_xlsx_inputs() -> list[str]:
         if args.xlsx_input_file:
             input_path = Path(args.xlsx_input_file)
             if input_path.suffix.lower() != ".xlsx":
@@ -303,7 +289,7 @@ if __name__ == "__main__":
         matched = sorted(input_dir.glob(args.xlsx_input_glob))
         return [str(path) for path in matched if path.is_file() and path.suffix.lower() == ".xlsx"]
 
-    def run_xlsx_once(xlsx_path: str):
+def run_xlsx_once(xlsx_path: str, yes_rag = True):
         start = time.time()
         response, preview, llm_raw = asyncio.run(TelcoRAG(
             query="",
@@ -311,6 +297,7 @@ if __name__ == "__main__":
             model_name=args.model_name,
             max_sample_rows=args.max_sample_rows,
             max_scan_rows=args.max_scan_rows,
+            yes_rag=yes_rag,
         ))
 
         output_dir = Path(args.xlsx_output_dir)
@@ -324,8 +311,30 @@ if __name__ == "__main__":
             f"[XLSX] {xlsx_path} -> {output_path} "
             f"(columns={preview['column_count']}, scanned_rows={preview['rows_scanned']}, {end - start:.2f}s)"
         )
+    
+#"""
+
+if __name__ == "__main__":
+    import argparse
+
+    base_dir = Path(__file__).resolve().parent
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--query", type=str, default=None)
+    ap.add_argument("--answer", type=str, default=None)
+    ap.add_argument("--options", type=str, default=None, help="JSON string for options dict")
+    ap.add_argument("--model-name", type=str, default="Qwen/Qwen3-30B-A3B-Instruct-2507")
+    ap.add_argument("--xlsx-input-file", "-xif", type=str, default=None, help="Single .xlsx file path")
+    ap.add_argument("--xlsx-input-dir", "-xid", type=str, default=None, help="Directory containing .xlsx files")
+    ap.add_argument("--xlsx-input-glob", type=str, default="*.xlsx", help="Glob pattern for xlsx files")
+    ap.add_argument("--xlsx-output-dir", "-xod", type=str, default=str(base_dir / "outputs"), help="Output directory for xlsx mode")
+    ap.add_argument("--max-sample-rows", type=int, default=100, help="Max non-empty samples per column for LLM prompt")
+    ap.add_argument("--max-scan-rows", type=int, default=2000, help="Max rows scanned from xlsx")
+    ap.add_argument("--without-RAG", action="store_true", help="LLM only mode")
+    args = ap.parse_args()
 
     print("=== START ===")
+    yes_rag = not(args.without_RAG)
     
     xlsx_mode_requested = bool(args.xlsx_input_file or args.xlsx_input_dir)
     if xlsx_mode_requested:
@@ -334,20 +343,20 @@ if __name__ == "__main__":
             print("[XLSX] No .xlsx files found.")
         for xlsx_path in xlsx_targets:
             try:
-                run_xlsx_once(xlsx_path)
+                run_xlsx_once(xlsx_path, yes_rag)
             except Exception as e:
                 print(f"[XLSX][ERROR] {xlsx_path}: {e}")
                 traceback.print_exc()
                 
     elif args.query is not None:
         opts = parse_options(args.options)
-        run_once(args.query, args.answer, opts)
+        run_once(args.query, args.answer, opts, yes_rag)
         
     else:
         while True:
             try:
                 user_query = input("User Query: ").strip()
-                run_once(user_query, None, None)
+                run_once(user_query, None, None, yes_rag)
             except KeyboardInterrupt:
                 print("\n\ndetect interrupt. program exitted.")
                 break

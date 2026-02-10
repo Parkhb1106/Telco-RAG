@@ -10,11 +10,20 @@ from src.xlsx_schema import (
 )
 import logging
 
-def generate(question, model_name):
+def generate(question, model_name, yes_rag=True):
     """Generate a response using the GPT model given a structured question object."""
     try:
         # Constructing the content context from the question object
-        content = '\n'.join(question.context)
+        context_section = ""
+        if yes_rag:
+            content = "\n".join(question.context)
+            context_section = (
+                "Considering the following context:\n"
+                f"{content}\n\n"
+                "Please answer the following question, add between paranthesis the retrieval(e.g. Retrieval 3) that you used for each eleement of your reasoning:\n"
+                f"{question.question}"
+            )
+        
         prompt = f"""
         You are a telecom domain expert.
         
@@ -26,11 +35,7 @@ def generate(question, model_name):
         Please answer the following question:
         {question.query}
 
-        Considering the following context:
-        {content}
-
-        Please answer the following question, add between paranthesis the retrieval(e.g. Retrieval 3) that you used for each eleement of your reasoning:
-        {question.question}
+        {context_section}
         """
         print(prompt)
         logging.info("Generated system prompt for OpenAI completion.")
@@ -70,7 +75,7 @@ def find_option_number(text):
         return []
 
 
-def check_question(question, answer, options, model_name='gpt-4o-mini'):
+def check_question(question, answer, options, model_name='gpt-4o-mini', yes_rag=True):
     """
     This function checks if the answer provided for a non-JSON formatted question is correct. 
     It dynamically selects the model based on the model_name provided and constructs a prompt 
@@ -103,7 +108,15 @@ def check_question(question, answer, options, model_name='gpt-4o-mini'):
 
         options_text = '\n'.join(options_list)
 
-        content = '\n'.join(question.context)
+        context_section = ""
+        if yes_rag:
+            content = "\n".join(question.context)
+            context_section = (
+                "Considering the following context:\n"
+                f"{content}\n\n"
+                "Please provide the answers to the following multiple choice question.\n"
+                f"{question.question}\n\n"
+            )
     
         syst_prompt = f"""
         You are a telecom domain expert.
@@ -116,13 +129,7 @@ def check_question(question, answer, options, model_name='gpt-4o-mini'):
         Please provide the answers to the following multiple choice question.
         {question.query}
         
-        Considering the following context:
-        {content}
-        
-        Please provide the answers to the following multiple choice question.
-        {question.question}
-        
-        Options:
+        {context_section}Options:
         Write only the option number corresponding to the correct answer:\n{options_text}
         
         Answer format should be: Answer option <option_id>
@@ -175,13 +182,13 @@ def analyze_xlsx(question, preview, model_name='gpt-4o-mini'):
         return None, False
 
 
-def analyze_xlsx_column(question, preview, column_name, model_name='gpt-4o-mini'):
+def analyze_xlsx_column(question, preview, column_name, model_name='gpt-4o-mini', yes_rag=True):
     try:
         column = next((c for c in preview.get("columns", []) if c.get("name") == column_name), None)
         if column is None:
             column = {"name": column_name, "samples": []}
 
-        prompt = _build_column_schema_prompt(question, preview, column)
+        prompt = _build_column_schema_prompt(question, preview, column, yes_rag)
         llm_raw = submit_prompt_flex(prompt, model=model_name, output_json=True)
         parsed = _load_json_object(llm_raw)
 
@@ -205,9 +212,9 @@ def analyze_xlsx_column(question, preview, column_name, model_name='gpt-4o-mini'
         return normalized[column_name], ""
 
 
-def summarize_xlsx(question, preview, column_schema, model_name='gpt-4o-mini'):
+def summarize_xlsx(question, preview, column_schema, model_name='gpt-4o-mini', yes_rag=True):
     try:
-        prompt = _build_summary_prompt(question, preview, column_schema)
+        prompt = _build_summary_prompt(question, preview, column_schema, yes_rag)
         llm_raw = submit_prompt_flex(prompt, model=model_name, output_json=True)
         parsed = _load_json_object(llm_raw)
         summary = str(parsed.get("summary", "")).strip()
