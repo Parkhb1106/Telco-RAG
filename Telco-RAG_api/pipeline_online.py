@@ -2,9 +2,9 @@ import os
 from pathlib import Path
 import traceback
 from src.query import Query
-from src.generate import generate, check_question, analyze_xlsx
+from src.generate import generate, check_question, analyze_xlsx_column, summarize_xlsx
 from src.LLMs.LLM import submit_prompt_flex
-from src.xlsx_schema import extract_xlsx_preview, _build_rag_query
+from src.xlsx_schema import extract_xlsx_preview, _build_rag_query, _build_rag_query_summary, _normalize_schema
 import git
 import asyncio
 import time
@@ -35,28 +35,84 @@ async def TelcoRAG(
         start =  time.time()
         if xlsx_file:
             preview = extract_xlsx_preview(
-                xlsx_path=xlsx_path,
+                xlsx_path=xlsx_file,
                 max_sample_rows=max_sample_rows,
                 max_scan_rows=max_scan_rows,
             )
+
+            def _run_xlsx_rag(rag_query: str) -> Query:
+                rag_question = Query(rag_query, [])
+                rag_question.def_TA_question(isxlsx=True)
+                semantic_search = rag_question.get_custom_context(
+                    k=10,
+                    model_name=model_name,
+                    validate_flag=False,
+                )
+                keyword_search = rag_question.get_custom_context_keyword(k=10)
+                rag_question.fusion_context(
+                    semantic_search=semantic_search,
+                    keyword_search=keyword_search,
+                    k=5,
+                    semantic_weight=1.0,
+                    keyword_weight=1.5,
+                    model_name=model_name,
+                    validate_flag=False,
+                )
+                return rag_question
+
+            raw_schema = {}
+            llm_raw_columns = {}
+            total_runs = preview["column_count"] + 1
+
+            for idx, column in enumerate(preview["columns"], start=1):
+                column_name = column["name"]
+                print(f"[XLSX] RAG run {idx}/{total_runs} (column={column_name})")
+
+                column_query = _build_rag_query(column)
+                column_question = _run_xlsx_rag(column_query)
+
+                single_column_preview = {
+                    "file_name": preview["file_name"],
+                    "sheet_name": preview["sheet_name"],
+                    "rows_scanned": preview["rows_scanned"],
+                    "rows_with_data": preview["rows_with_data"],
+                    "column_count": 1,
+                    "columns": [column],
+                    "column_names": [column_name],
+                }
+
+                column_schema, column_llm_raw = analyze_xlsx_column(
+                    question=column_question,
+                    preview=single_column_preview,
+                    column_name=column_name,
+                    model_name=model_name,
+                )
+                raw_schema[column_name] = column_schema
+                llm_raw_columns[column_name] = column_llm_raw
+
+            print(f"[XLSX] RAG run {total_runs}/{total_runs} (summary)")
+            summary_query = _build_rag_query_summary(preview)
+            summary_question = _run_xlsx_rag(summary_query)
             
-            question_text = _build_rag_query(preview)
-            question = Query(question_text, [])
-            
-            question.def_TA_question(isxlsx = True)
-            
-            semantic_search = question.get_custom_context(k=10, model_name=model_name, validate_flag=False)
-            keyword_search = question.get_custom_context_keyword(k=10)
-            question.fusion_context(semantic_search=semantic_search, keyword_search=keyword_search, k=5, semantic_weight=1.0, keyword_weight=1.5, model_name=model_name, validate_flag=False)
-            
-            preview["context"] = question.context
-            
-            normalized_schema, preview, llm_raw = analyze_xlsx(
-                question=question,
+            summary_text, summary_llm_raw = summarize_xlsx(
+                question=summary_question,
                 preview=preview,
+                column_schema=raw_schema,
                 model_name=model_name,
             )
-            
+            raw_schema["summary"] = summary_text
+
+            fallback_summary = (
+                f'{preview["file_name"]} contains {preview["column_count"]} columns. '
+                "This summary was auto-generated because model output did not include a summary."
+            )
+            normalized_schema = _normalize_schema(
+                raw_schema=raw_schema,
+                column_names=preview["column_names"],
+                fallback_summary=fallback_summary,
+            )
+            llm_raw = {"columns": llm_raw_columns, "summary": summary_llm_raw}
+
             end = time.time()
             print(f"[XLSX] Generation took {end-start:.2f} seconds")
             return normalized_schema, preview, llm_raw
@@ -150,7 +206,7 @@ if __name__ == "__main__":
     ap.add_argument("--xlsx-input-dir", "-xid", type=str, default=None, help="Directory containing .xlsx files")
     ap.add_argument("--xlsx-input-glob", type=str, default="*.xlsx", help="Glob pattern for xlsx files")
     ap.add_argument("--xlsx-output-dir", "-xod", type=str, default=str(base_dir / "outputs"), help="Output directory for xlsx mode")
-    ap.add_argument("--max-sample-rows", type=int, default=2000, help="Max non-empty samples per column for LLM prompt")
+    ap.add_argument("--max-sample-rows", type=int, default=100, help="Max non-empty samples per column for LLM prompt")
     ap.add_argument("--max-scan-rows", type=int, default=2000, help="Max rows scanned from xlsx")
     ap.add_argument("--without-RAG", action="store_true", help="LLM only mode")
     args = ap.parse_args()

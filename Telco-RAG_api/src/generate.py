@@ -1,7 +1,13 @@
 import re
 import traceback
 from src.LLMs.LLM import submit_prompt_flex
-from src.xlsx_schema import _build_schema_prompt, _load_json_object, _normalize_schema
+from src.xlsx_schema import (
+    _build_column_schema_prompt,
+    _build_schema_prompt,
+    _build_summary_prompt,
+    _load_json_object,
+    _normalize_schema,
+)
 import logging
 
 def generate(question, model_name):
@@ -167,3 +173,55 @@ def analyze_xlsx(question, preview, model_name='gpt-4o-mini'):
         print(f"An error occurred: {e}")
         print(traceback.format_exc())
         return None, False
+
+
+def analyze_xlsx_column(question, preview, column_name, model_name='gpt-4o-mini'):
+    try:
+        column = next((c for c in preview.get("columns", []) if c.get("name") == column_name), None)
+        if column is None:
+            column = {"name": column_name, "samples": []}
+
+        prompt = _build_column_schema_prompt(question, preview, column)
+        llm_raw = submit_prompt_flex(prompt, model=model_name, output_json=True)
+        parsed = _load_json_object(llm_raw)
+
+        if column_name in parsed and isinstance(parsed[column_name], dict):
+            parsed = parsed[column_name]
+
+        normalized = _normalize_schema(
+            raw_schema={column_name: parsed if isinstance(parsed, dict) else {}},
+            column_names=[column_name],
+            fallback_summary="N/A",
+        )
+        return normalized[column_name], llm_raw
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        print(traceback.format_exc())
+        normalized = _normalize_schema(
+            raw_schema={},
+            column_names=[column_name],
+            fallback_summary="N/A",
+        )
+        return normalized[column_name], ""
+
+
+def summarize_xlsx(question, preview, column_schema, model_name='gpt-4o-mini'):
+    try:
+        prompt = _build_summary_prompt(question, preview, column_schema)
+        llm_raw = submit_prompt_flex(prompt, model=model_name, output_json=True)
+        parsed = _load_json_object(llm_raw)
+        summary = str(parsed.get("summary", "")).strip()
+        if not summary:
+            summary = (
+                f'{preview["file_name"]} contains {preview["column_count"]} columns. '
+                "This summary was auto-generated because model output did not include a summary."
+            )
+        return summary, llm_raw
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        print(traceback.format_exc())
+        fallback = (
+            f'{preview["file_name"]} contains {preview["column_count"]} columns. '
+            "This summary was auto-generated because summary generation failed."
+        )
+        return fallback, ""

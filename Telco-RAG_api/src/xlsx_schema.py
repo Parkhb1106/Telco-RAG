@@ -254,10 +254,58 @@ def extract_xlsx_preview(
     }
 
 
-def _build_rag_query(preview: Dict[str, Any]) -> str:
-    columns = preview["column_names"]
-    snippet = " | ".join(columns)
-    return snippet
+def _build_rag_query(column):
+    query = f"""
+    Describe telecom domain data below.
+    
+    Data name : {column["name"]}
+    Data samples : {", ".join(column["samples"])}
+    
+    """
+    return query
+
+def _build_rag_query_summary(preview: Dict[str, Any]) -> str:
+    query = f"""
+    Describe telecom domain data below.
+    
+    Data columns : {", ".join(preview["column_names"])}
+    """
+    return query
+
+
+def _build_column_schema_prompt(
+    question,
+    preview: Dict[str, Any],
+    column: Dict[str, Any],
+) -> str:
+    column_json = jsonlib.dumps(column, ensure_ascii=False, indent=2)
+    content = "\n".join(question.context)
+    return f"""
+You are a telecom data expert.
+
+Given a single Excel column profile, produce a strict JSON object describing only that column.
+
+File: {preview["file_name"]}
+Sheet: {preview["sheet_name"]}
+Column profile:
+{column_json}
+
+Considering the following context:
+{question.query}
+
+{content}
+
+Output requirements:
+1) Output must be a valid JSON object only.
+2) Output must contain exactly these keys:
+   - entity: short snake_case identifier
+   - description: concise plain-English description
+   - category: short category label
+   - unit: physical unit or data type (e.g., dBm, dB, MHz, integer, float, datetime, string, percent)
+   - layer: one of PHY, MAC, RLC, PDCP, RRC, NAS, APP, or N/A
+3) If uncertain, use "N/A".
+4) Do not add markdown, code fences, comments, or extra text.
+""".strip()
 
 
 def _build_schema_prompt(question, preview: Dict[str, Any]) -> str:
@@ -277,6 +325,7 @@ Columns:
 
 Considering the following context:
 {question.query}
+
 {content}
 
 Output requirements:
@@ -291,6 +340,39 @@ Output requirements:
 4) Add a top-level key named "summary" with a 2-4 sentence summary of the whole file.
 5) If uncertain, use "N/A".
 6) Do not add markdown, code fences, comments, or extra text.
+""".strip()
+
+
+def _build_summary_prompt(
+    question,
+    preview: Dict[str, Any],
+    column_schema: Dict[str, Any],
+) -> str:
+    column_schema_json = jsonlib.dumps(column_schema, ensure_ascii=False, indent=2)
+    content = "\n".join(question.context)
+    return f"""
+You are a telecom data expert.
+
+Given an Excel file profile and per-column annotations, produce a strict JSON summary.
+
+File: {preview["file_name"]}
+Sheet: {preview["sheet_name"]}
+Rows scanned: {preview["rows_scanned"]}
+Rows containing any data: {preview["rows_with_data"]}
+Column annotations:
+{column_schema_json}
+
+Considering the following context:
+{question.query}
+
+{content}
+
+Output requirements:
+1) Output must be a valid JSON object only.
+2) Output must contain exactly one top-level key: "summary".
+3) "summary" must be 2-4 sentences describing the whole file.
+4) If uncertain, use "N/A".
+5) Do not add markdown, code fences, comments, or extra text.
 """.strip()
 
 
