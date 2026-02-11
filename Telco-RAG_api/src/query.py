@@ -307,6 +307,16 @@ class Query:
             if nl == -1:
                 return text[idx:].lstrip()
             return text[nl + 1:].lstrip()
+
+        def _extract_source(text):
+            marker = "This retrieval is performed from the document"
+            if marker not in text:
+                return None
+            after = text.split(marker, 1)[1].strip()
+            line = after.splitlines()[0].strip() if after else ""
+            if line.endswith("."):
+                line = line[:-1].strip()
+            return line or None
         
         query = self.question if query is None else query
 
@@ -315,6 +325,7 @@ class Query:
 
         scores = {}
         texts = {}
+        sources = {}
         order_hint = {}
 
         for rank, text in enumerate(semantic_list, start=1):
@@ -323,6 +334,9 @@ class Query:
             scores[key] = scores.get(key, 0.0) + score
             if key not in texts or len(text) > len(texts[key]):
                 texts[key] = text
+            source = _extract_source(text)
+            if key not in sources or (not sources[key] and source):
+                sources[key] = source
             order_hint.setdefault(key, rank)
 
         for rank, text in enumerate(keyword_list, start=1):
@@ -331,9 +345,15 @@ class Query:
             scores[key] = scores.get(key, 0.0) + score
             if key not in texts or len(text) > len(texts[key]):
                 texts[key] = text
+            source = _extract_source(text)
+            if key not in sources or (not sources[key] and source):
+                sources[key] = source
             order_hint.setdefault(key, len(semantic_list) + rank)
 
         if not scores:
+            self.context = []
+            self.context_score = []
+            self.context_source = []
             return []
 
         ranked = sorted(
@@ -341,6 +361,7 @@ class Query:
             key=lambda item: (-item[1], order_hint.get(item[0], 1_000_000))
         )
 
+        reranked = [(key, score) for key, score in ranked]
         rerank_scores = {}
         if query and ranked:
             passages = []
@@ -381,13 +402,19 @@ class Query:
 
         fused = []
         scores = []
+        context_sources = []
         for i, (key, score) in enumerate(reranked, start=1):
             body = _strip_retrieval_prefix(texts[key])
             fused.append(f"\nRetrieval {i}:\n{body}")
             scores.append(score)
+            source = sources.get(key)
+            context_sources.append(
+                f"Retrieval {i}, Source: {source}" if source else f"Retrieval {i}, Source: Unknown"
+            )
         
         self.context = fused
         self.context_score = scores
+        self.context_source = context_sources
             
         if validate_flag:
             self.validate_context(model_name=model_name, k=k, UI_flag=UI_flag)

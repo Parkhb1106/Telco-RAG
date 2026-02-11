@@ -156,10 +156,24 @@ def parse_pred_index(model_text: str, max_opt: int) -> Optional[int]:
 class Counters:
     total: int = 0
     correct: int = 0
+    unknown: int = 0
 
 
 def safe_div(a: int, b: int) -> float:
     return float(a) / float(b) if b else 0.0
+
+
+def is_unknown_response(model_text: Any) -> bool:
+    """
+    Mark explicit abstentions such as:
+      - "unknown"
+      - "Answer unknown option 0"
+      - "option 0"
+    """
+    if not isinstance(model_text, str):
+        return False
+    text = model_text.lower()
+    return ("unknown" in text) or bool(re.search(r"\boption\s*0\b", text))
 
 
 # ----------------------------
@@ -276,17 +290,20 @@ def main() -> None:
             err = ex.get("error", None)
 
             pred_idx = parse_pred_index(raw_resp_text, max_opt) if not err else None
+            is_unknown = is_unknown_response(raw_resp_text)
             is_correct = (pred_idx == gold_idx) if (pred_idx is not None and gold_idx is not None) else False
 
             # Update metrics
             overall.total += 1
             overall.correct += int(is_correct)
+            overall.unknown += int(is_unknown)
 
             cat_key = str(subject)
             if cat_key not in by_subject:
                 by_subject[cat_key] = Counters()
             by_subject[cat_key].total += 1
             by_subject[cat_key].correct += int(is_correct)
+            by_subject[cat_key].unknown += int(is_unknown)
 
             # Write detail row
             row = {
@@ -300,6 +317,7 @@ def main() -> None:
                 "pred": {
                     "response": raw_resp_text,
                     "response_index": pred_idx,
+                    "is_unknown": is_unknown,
                 },
                 "correct": is_correct,
                 "category": subject,
@@ -319,13 +337,19 @@ def main() -> None:
         "llm": llm_name,
         "elapsed_sec": elapsed,
         "count": overall.total,
+        "count_without_unknown": overall.total - overall.unknown,
+        "unknown": overall.unknown,
         "correct": overall.correct,
         "accuracy": safe_div(overall.correct, overall.total),
+        "accuracy_without_unknown": safe_div(overall.correct, overall.total - overall.unknown),
         "by_category": {
             k: {
                 "n": v.total,
+                "n_without_unknown": v.total - v.unknown,
+                "unknown": v.unknown,
                 "correct": v.correct,
                 "accuracy": safe_div(v.correct, v.total),
+                "accuracy_without_unknown": safe_div(v.correct, v.total - v.unknown),
             }
             for k, v in sorted(by_subject.items(), key=lambda kv: kv[0])
         },
@@ -339,6 +363,10 @@ def main() -> None:
 
     print("\n=== DONE ===")
     print(f"- accuracy: {summary['accuracy']} ({overall.correct}/{overall.total})")
+    print(
+        f"- accuracy_without_unknown: {summary['accuracy_without_unknown']} "
+        f"({overall.correct}/{summary['count_without_unknown']})"
+    )
     print(f"- details:  {details_path}")
     print(f"- summary:   {summary_path}")
 

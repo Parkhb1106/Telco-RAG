@@ -106,7 +106,10 @@ def main() -> None:
     ap.add_argument("--llm", default="Qwen/Qwen3-30B-A3B-Instruct-2507", help="Passed into TelcoRAG(model_name=...)")
     ap.add_argument("--out-dir", default="evaluation_system/outputs/open_ended", help="Output directory")
     ap.add_argument("--sleep", type=float, default=0.0, help="Optional sleep seconds per sample (rate-limit / thermal)")
+    ap.add_argument("--without-RAG", action="store_true", help="LLM only mode")
     args = ap.parse_args()
+    
+    yes_rag = not(args.without_RAG)
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -149,6 +152,7 @@ def main() -> None:
                     answer=None,
                     options=None,  # normalized dict ("option N": text)
                     model_name=args.llm,
+                    yes_rag=yes_rag
                 ))
                 raw_resp_text = "" if resp is None else str(resp)
             except Exception as e:

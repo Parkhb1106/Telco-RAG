@@ -46,7 +46,32 @@ python Telco-RAG/Telco-RAG_api/evaluation_system/jsonl_to_json.py --input OPENEN
 python Telco-RAG/Telco-RAG_api/evaluation_system/jsonl_to_json.py --input OPENENDED_dm_se_rrc_nas_qa_dataset.jsonl
 
 
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/mcq_generation.py \
+ --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/versioned/MCQ_provided.json \
+ --out-dir evaluation_system/outputs/mcq_provided/LLM_only \
+ --without-RAG
 
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/mcq_evaluation.py \
+ --response evaluation_system/outputs/mcq_provided/LLM_only \
+ --out-dir evaluation_system/outputs/mcq_provided/LLM_only
+
+
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/mcq_generation.py \
+ --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/MCQ_teleqna.json \
+ --out-dir evaluation_system/outputs/mcq/LLM_only \
+ --without-RAG
+
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/mcq_evaluation.py \
+ --response evaluation_system/outputs/mcq/LLM_only \
+ --out-dir evaluation_system/outputs/mcq/LLM_only
 
 
 cd Telco-RAG/Telco-RAG_api
@@ -59,19 +84,61 @@ PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
 python evaluation_system/mcq_evaluation.py
 
 
-cd Telco-RAG/Telco-RAG_api
-PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
-python evaluation_system/openended_generation.py \
- --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/OPENENDED_3gpp_rag_eval_qa_100.json
 
 cd Telco-RAG/Telco-RAG_api
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
 python evaluation_system/openended_generation.py \
- --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/OPENENDED_dm_se_rrc_nas_qa_dataset.json
+ --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/OPENENDED_3gpp_rag_eval_qa_100.json \
+ --out-dir evaluation_system/outputs/open_ended/100/LLM_only \
+ --without-RAG
 
 cd Telco-RAG/Telco-RAG_api
 PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
-python evaluation_system/openended_evaluation.py
+python evaluation_system/openended_evaluation.py \
+ --response evaluation_system/outputs/open_ended/100/LLM_only \
+ --out-dir evaluation_system/outputs/open_ended/100/LLM_only
+
+
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/openended_generation.py \
+ --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/OPENENDED_3gpp_rag_eval_qa_100.json \
+ --out-dir evaluation_system/outputs/open_ended/100
+
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/openended_evaluation.py \
+ --response evaluation_system/outputs/open_ended/100 \
+ --out-dir evaluation_system/outputs/open_ended/100
+
+
+
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/openended_generation.py \
+ --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/OPENENDED_dm_se_rrc_nas_qa_dataset.json \
+ --out-dir evaluation_system/outputs/open_ended/50/LLM_only \
+ --without-RAG
+
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/openended_evaluation.py \
+ --response evaluation_system/outputs/open_ended/50/LLM_only \
+ --out-dir evaluation_system/outputs/open_ended/50/LLM_only
+
+
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/openended_generation.py \
+ --dataset /NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api/evaluation_system/inputs/OPENENDED_dm_se_rrc_nas_qa_dataset.json \
+ --out-dir evaluation_system/outputs/open_ended/50
+
+cd Telco-RAG/Telco-RAG_api
+PYTHONPATH=/NAS/inno_aidev/users/hbpark/Telco-RAG/Telco-RAG_api \
+python evaluation_system/openended_evaluation.py \
+ --response evaluation_system/outputs/open_ended/50 \
+ --out-dir evaluation_system/outputs/open_ended/50
+
 
 
 python Telco-RAG/Telco-RAG_api/pipeline_online.py \

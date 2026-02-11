@@ -16,4 +16,4 @@ SIMILARITY=$(python -c 'import json; print(json.load(open("evaluation_system/out
 BERT_SCORE=$(python -c 'import json; print(json.load(open("evaluation_system/outputs/open_ended/evaluation_summary.json"))["bert_score"])')
 FAITHFULNESS=$(python -c 'import json; print(json.load(open("evaluation_system/outputs/open_ended/evaluation_summary.json"))["faithfulness"])')
 
-python -c 'import os, vessl; vessl.update_context_variables(data={"ACCURACY": os.environ.get("ACCURACY","")}); vessl.update_context_variables(data={"BERT_SCORE": os.environ.get("BERT_SCORE","")}); vessl.update_context_variables(data={"FAITHFULNESS": os.environ.get("FAITHFULNESS","")})'
+python -c 'import os, vessl; vessl.update_context_variables(data={"SIMILARITY": os.environ.get("SIMILARITY","")}); vessl.update_context_variables(data={"BERT_SCORE": os.environ.get("BERT_SCORE","")}); vessl.update_context_variables(data={"FAITHFULNESS": os.environ.get("FAITHFULNESS","")})'
