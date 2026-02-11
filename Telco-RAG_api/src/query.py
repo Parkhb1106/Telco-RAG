@@ -149,7 +149,7 @@ class Query:
             if isinstance(result, list):
                 self.context = [f"\nRetrieval {i+1}:\n...{data}...\nThis retrieval is performed from the document 3GPP {source}.\n" for i, (index, data, source, _) in enumerate(result)]
                 self.context_source = [f"Index: {index}, Source: {source}" for index, _, source, _ in result]
-                self.context_score = similarity
+                self.context_score = similarity.tolist()
             else:
                 self.context = result
         except Exception as e:
