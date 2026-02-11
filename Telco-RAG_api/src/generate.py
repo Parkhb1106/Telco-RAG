@@ -25,13 +25,6 @@ def generate(question, model_name, yes_rag=True):
             )
         
         prompt = f"""
-        You are a telecom domain expert.
-        
-        Rules:
-        1) If you don't know the answer, output: "unknown".
-        2) Be precise with conditions (IF/THEN/EXCEPT).
-        3) Keep the answer within 300 tokens.
-        
         Please answer the following question:
         {question.query}
 
@@ -123,12 +116,6 @@ def check_question(question, answer, options, model_name='gpt-4o-mini', yes_rag=
             )
     
         syst_prompt = f"""
-        You are a telecom domain expert.
-        
-        Rules:
-        1) If you don't know the answer, output: "Answer unknown option 0".
-        2) Be precise with conditions (IF/THEN/EXCEPT).
-        
         Please provide the answers to the following multiple choice question.
         {question.query}
         
